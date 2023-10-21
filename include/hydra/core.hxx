@@ -170,7 +170,10 @@ namespace hydra
     X_HYDRA_INTERFACE(IInput)            \
     X_HYDRA_INTERFACE(ISaveState)        \
     X_HYDRA_INTERFACE(IMultiplayer)      \
-    X_HYDRA_INTERFACE(ILog)
+    X_HYDRA_INTERFACE(ILog)              \
+    X_HYDRA_INTERFACE(IReadableMemory)   \
+    X_HYDRA_INTERFACE(IRewind)           \
+    X_HYDRA_INTERFACE(ICheat)
 
 #define X_HYDRA_INTERFACE(name) class name;
     X_HYDRA_INTERFACES
@@ -209,6 +212,7 @@ namespace hydra
     {
         virtual ~IFrontendDriven() = default;
         virtual void runFrame() = 0;
+        virtual uint16_t getFps() = 0;
     };
 
     struct HC_GLOBAL ISelfDriven
@@ -287,6 +291,35 @@ namespace hydra
         virtual void setLogCallback(LogTarget target, void (*callback)(const char* message)) = 0;
     };
 
+    // Readable memory interface, emulators that support the frontend reading their memory inherit
+    // this. This will be used for debugging purposes and for RetroAchievements
+    struct HC_GLOBAL IReadableMemory
+    {
+        virtual ~IReadableMemory() = default;
+        virtual void readMemory(uint32_t address, uint8_t* buffer, uint32_t num_bytes) = 0;
+    };
+
+    // Rewind interface, emulators that support rewinding inherit this
+    struct HC_GLOBAL IRewind
+    {
+        virtual ~IRewind() = default;
+        virtual void rewindFrame() = 0;
+        virtual uint32_t getRewindFrameCount() = 0;
+
+        // Returns true if the rewind frame count was set successfully, false otherwise
+        virtual bool setRewindFrameCount(uint32_t count) = 0;
+    };
+
+    // Cheats interface, emulators that support cheats inherit this
+    struct HC_GLOBAL ICheat
+    {
+        virtual ~ICheat() = default;
+        virtual uint32_t addCheat(const char* code) = 0;
+        virtual void removeCheat(uint32_t id) = 0;
+        virtual void enableCheat(uint32_t id) = 0;
+        virtual void disableCheat(uint32_t id) = 0;
+    };
+
     /// Create an emulator and return a base interface pointer
     HC_API IBase* createEmulator();
     /// Destroy an emulator using a base interface pointer
@@ -359,6 +392,24 @@ public:                                                                         
             {                                                                           \
                 return ::hydra::type_traits::is_base_of<                                \
                     hydra::ILog,                                                        \
+                    ::hydra::type_traits::remove_pointer<decltype(this)>::type>::value; \
+            }                                                                           \
+            case ::hydra::InterfaceType::IReadableMemory:                               \
+            {                                                                           \
+                return ::hydra::type_traits::is_base_of<                                \
+                    hydra::IReadableMemory,                                             \
+                    ::hydra::type_traits::remove_pointer<decltype(this)>::type>::value; \
+            }                                                                           \
+            case ::hydra::InterfaceType::IRewind:                                       \
+            {                                                                           \
+                return ::hydra::type_traits::is_base_of<                                \
+                    hydra::IRewind,                                                     \
+                    ::hydra::type_traits::remove_pointer<decltype(this)>::type>::value; \
+            }                                                                           \
+            case ::hydra::InterfaceType::ICheat:                                        \
+            {                                                                           \
+                return ::hydra::type_traits::is_base_of<                                \
+                    hydra::ICheat,                                                      \
                     ::hydra::type_traits::remove_pointer<decltype(this)>::type>::value; \
             }                                                                           \
             default:                                                                    \
@@ -442,6 +493,30 @@ public:                                                                         
         if (hasInterface(::hydra::InterfaceType::ILog))                                 \
         {                                                                               \
             return (::hydra::ILog*)(this);                                              \
+        }                                                                               \
+        return nullptr;                                                                 \
+    }                                                                                   \
+    ::hydra::IReadableMemory* asIReadableMemory() override                              \
+    {                                                                                   \
+        if (hasInterface(::hydra::InterfaceType::IReadableMemory))                      \
+        {                                                                               \
+            return (::hydra::IReadableMemory*)(this);                                   \
+        }                                                                               \
+        return nullptr;                                                                 \
+    }                                                                                   \
+    ::hydra::IRewind* asIRewind() override                                              \
+    {                                                                                   \
+        if (hasInterface(::hydra::InterfaceType::IRewind))                              \
+        {                                                                               \
+            return (::hydra::IRewind*)(this);                                           \
+        }                                                                               \
+        return nullptr;                                                                 \
+    }                                                                                   \
+    ::hydra::ICheat* asICheat() override                                                \
+    {                                                                                   \
+        if (hasInterface(::hydra::InterfaceType::ICheat))                               \
+        {                                                                               \
+            return (::hydra::ICheat*)(this);                                            \
         }                                                                               \
         return nullptr;                                                                 \
     }                                                                                   \
