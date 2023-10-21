@@ -4,7 +4,7 @@ The hydra header exposes interfaces that an implementation class can inherit to 
 You can inherit as many or as few of these interfaces as you want, except for `IBase` which must always be inherited.
 
 Your class will then need to use the `HYDRA_CLASS` macro inside its definition (much like Qts `Q_OBJECT`) which will define a bunch of getter functions
-such as `getIAudioInterface()`. The definition of these functions will check if you inherit from them, and either return a casted `this` or `nullptr`.
+such as `asIAudioInterface()`. The definition of these functions will check if you inherit from them, and either return a casted `this` or `nullptr`.
 
 Example implementation:
 ```cpp
@@ -15,7 +15,6 @@ public:
     HydraCore();
     virtual ~HydraCore();
 private:
-    // 
     bool loadFile(const char* type, const char* path) override;
     void reset() override;
     hydra::Size getNativeSize() override;
@@ -35,6 +34,9 @@ I was unable to get `dynamic_cast` working on android, and it seems that it's wa
 
 ### Why not use STL?
 Using STL may break stuff if the STL version between the core and the frontend is different.
+
+### Why both a hasInterface function and a asInterface function?
+While asInterface will return null if an interface is not supported, running the hasInterface function first is vital for the frontend so that if more interfaces are added previous core builds don't break
 
 In order to make a hydra core, you need 3 functions defined and a class
 

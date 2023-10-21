@@ -181,7 +181,7 @@ namespace hydra
 #define X_HYDRA_INTERFACE(name) name,
         X_HYDRA_INTERFACES
 #undef X_HYDRA_INTERFACE
-            Size
+            InterfaceCount
     };
 
     // The base emulator interface, every emulator core inherits this
@@ -365,7 +365,7 @@ public:                                                                         
                 return false;                                                           \
         }                                                                               \
     }                                                                                   \
-    ::hydra::IBase* getIBase() override                                                 \
+    ::hydra::IBase* asIBase() override                                                  \
     {                                                                                   \
         if (hasInterface(::hydra::InterfaceType::IBase))                                \
         {                                                                               \
@@ -373,7 +373,7 @@ public:                                                                         
         }                                                                               \
         return nullptr;                                                                 \
     }                                                                                   \
-    ::hydra::IFrontendDriven* getIFrontendDriven() override                             \
+    ::hydra::IFrontendDriven* asIFrontendDriven() override                              \
     {                                                                                   \
         if (hasInterface(::hydra::InterfaceType::IFrontendDriven))                      \
         {                                                                               \
@@ -381,7 +381,7 @@ public:                                                                         
         }                                                                               \
         return nullptr;                                                                 \
     }                                                                                   \
-    ::hydra::ISelfDriven* getISelfDriven() override                                     \
+    ::hydra::ISelfDriven* asISelfDriven() override                                      \
     {                                                                                   \
         if (hasInterface(::hydra::InterfaceType::ISelfDriven))                          \
         {                                                                               \
@@ -389,7 +389,7 @@ public:                                                                         
         }                                                                               \
         return nullptr;                                                                 \
     }                                                                                   \
-    ::hydra::ISoftwareRendered* getISoftwareRendered() override                         \
+    ::hydra::ISoftwareRendered* asISoftwareRendered() override                          \
     {                                                                                   \
         if (hasInterface(::hydra::InterfaceType::ISoftwareRendered))                    \
         {                                                                               \
@@ -397,7 +397,7 @@ public:                                                                         
         }                                                                               \
         return nullptr;                                                                 \
     }                                                                                   \
-    ::hydra::IOpenGlRendered* getIOpenGlRendered() override                             \
+    ::hydra::IOpenGlRendered* asIOpenGlRendered() override                              \
     {                                                                                   \
         if (hasInterface(::hydra::InterfaceType::IOpenGlRendered))                      \
         {                                                                               \
@@ -405,7 +405,7 @@ public:                                                                         
         }                                                                               \
         return nullptr;                                                                 \
     }                                                                                   \
-    ::hydra::IAudio* getIAudio() override                                               \
+    ::hydra::IAudio* asIAudio() override                                                \
     {                                                                                   \
         if (hasInterface(::hydra::InterfaceType::IAudio))                               \
         {                                                                               \
@@ -413,7 +413,7 @@ public:                                                                         
         }                                                                               \
         return nullptr;                                                                 \
     }                                                                                   \
-    ::hydra::IInput* getIInput() override                                               \
+    ::hydra::IInput* asIInput() override                                                \
     {                                                                                   \
         if (hasInterface(::hydra::InterfaceType::IInput))                               \
         {                                                                               \
@@ -421,7 +421,7 @@ public:                                                                         
         }                                                                               \
         return nullptr;                                                                 \
     }                                                                                   \
-    ::hydra::ISaveState* getISaveState() override                                       \
+    ::hydra::ISaveState* asISaveState() override                                        \
     {                                                                                   \
         if (hasInterface(::hydra::InterfaceType::ISaveState))                           \
         {                                                                               \
@@ -429,7 +429,7 @@ public:                                                                         
         }                                                                               \
         return nullptr;                                                                 \
     }                                                                                   \
-    ::hydra::IMultiplayer* getIMultiplayer() override                                   \
+    ::hydra::IMultiplayer* asIMultiplayer() override                                    \
     {                                                                                   \
         if (hasInterface(::hydra::InterfaceType::IMultiplayer))                         \
         {                                                                               \
@@ -437,7 +437,7 @@ public:                                                                         
         }                                                                               \
         return nullptr;                                                                 \
     }                                                                                   \
-    ::hydra::ILog* getILog() override                                                   \
+    ::hydra::ILog* asILog() override                                                    \
     {                                                                                   \
         if (hasInterface(::hydra::InterfaceType::ILog))                                 \
         {                                                                               \
@@ -450,6 +450,7 @@ private:                                                                        
     void youForgotToAddHydraCoreMacroToYourClass() override {}
 
     // Macros to generate HYDRA_CLASS if new interfaces are added
+
     // #define X_HYDRA_INTERFACE(name) case ::hydra::InterfaceType::name: { return
     // ::hydra::type_traits::is_base_of<hydra::name,
     // ::hydra::type_traits::remove_pointer<decltype(this)>::type>::value; } public:
@@ -460,7 +461,7 @@ private:                                                                        
     //     }
     // private:
     //     void youForgotToAddHydraCoreMacroToYourClass() override {}
-    // #define X_HYDRA_INTERFACE(name) ::hydra::name* get##name() override { if
+    // #define X_HYDRA_INTERFACE(name) ::hydra::name* as##name() override { if
     // (hasInterface(::hydra::InterfaceType::name)) { return (::hydra::name*)(this); } return
     // nullptr; } X_HYDRA_INTERFACES
 } // namespace hydra
