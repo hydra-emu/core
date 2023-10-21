@@ -326,7 +326,7 @@ namespace hydra
     struct HC_GLOBAL IIcon
     {
         virtual ~IIcon() = default;
-        virtual uint8_t* getIconData() = 0;
+        virtual const uint8_t* getIconData() = 0;
         virtual Size getIconSize() = 0;
     };
 
