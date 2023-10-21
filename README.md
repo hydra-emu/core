@@ -1,12 +1,17 @@
 # hydra core API documentation
 
-The hydra header exposes interfaces that an implementation class can inherit to create an emulator.
+The hydra header exposes interfaces that an implementation class can inherit from to create an emulator. For example, an emulator that uses or can use OpenGL for rendering should inherit the `GlEmulatorInterface` interface which provides functions for hooking the emulator's GL renderer with the frontend.
 You can inherit as many or as few of these interfaces as you want, except for `IBase` which must always be inherited.
+
+Currently available interfaces:
+- BaseEmulatorInterface: Provides functions for most basic functionality such as loading a file. Cores should typically implement this.
+- GlEmulatorInterface: Provides functions for communicating between an emulator's OpenGL renderer and the frontend. Cores that can use OpenGL for rendering should implement this.
+- FrontendDrivenEmulatorInterface: Provides functions for emulators that expect to be driven by the frontend. Cores that work like this should inherit from it
 
 Your class will then need to use the `HYDRA_CLASS` macro inside its definition (much like Qts `Q_OBJECT`) which will define a bunch of getter functions
 such as `asIAudioInterface()`. The definition of these functions will check if you inherit from them, and either return a casted `this` or `nullptr`.
 
-Example implementation:
+Example implementation of a Hydra core using OpenGL for rendering:
 ```cpp
 class HC_GLOBAL HydraCore final : public hydra::BaseEmulatorInterface, public hydra::GlEmulatorInterface, public hydra::FrontendDrivenEmulatorInterface
 {
