@@ -193,7 +193,7 @@ namespace hydra
         virtual Size getNativeSize() = 0;
         virtual void setOutputSize(Size size) = 0;
         virtual bool hasInterface(InterfaceType interface) = 0;
-#define X_HYDRA_INTERFACE(name) virtual name* get##name() = 0;
+#define X_HYDRA_INTERFACE(name) virtual name* as##name() = 0;
         X_HYDRA_INTERFACES
 #undef X_HYDRA_INTERFACE
 
