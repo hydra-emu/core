@@ -160,6 +160,9 @@ namespace hydra
         Website,
         Extensions,
         Firmware,
+        IconData,
+        IconWidth,
+        IconHeight,
     };
 
 #define X_HYDRA_INTERFACES               \
@@ -175,8 +178,7 @@ namespace hydra
     X_HYDRA_INTERFACE(ILog)              \
     X_HYDRA_INTERFACE(IReadableMemory)   \
     X_HYDRA_INTERFACE(IRewind)           \
-    X_HYDRA_INTERFACE(ICheat)            \
-    X_HYDRA_INTERFACE(IIcon)
+    X_HYDRA_INTERFACE(ICheat)
 
 #define X_HYDRA_INTERFACE(name) class name;
     X_HYDRA_INTERFACES
@@ -323,13 +325,6 @@ namespace hydra
         virtual void disableCheat(uint32_t id) = 0;
     };
 
-    struct HC_GLOBAL IIcon
-    {
-        virtual ~IIcon() = default;
-        virtual const uint8_t* getIconData() = 0;
-        virtual Size getIconSize() = 0;
-    };
-
     /// Create an emulator and return a base interface pointer
     HC_API IBase* createEmulator();
     /// Destroy an emulator using a base interface pointer
@@ -420,12 +415,6 @@ public:                                                                         
             {                                                                           \
                 return ::hydra::type_traits::is_base_of<                                \
                     hydra::ICheat,                                                      \
-                    ::hydra::type_traits::remove_pointer<decltype(this)>::type>::value; \
-            }                                                                           \
-            case ::hydra::InterfaceType::IIcon:                                     \
-            {                                                                           \
-                return ::hydra::type_traits::is_base_of<                                \
-                    hydra::IIcon,                                                   \
                     ::hydra::type_traits::remove_pointer<decltype(this)>::type>::value; \
             }                                                                           \
             default:                                                                    \
@@ -533,14 +522,6 @@ public:                                                                         
         if (hasInterface(::hydra::InterfaceType::ICheat))                               \
         {                                                                               \
             return (::hydra::ICheat*)(this);                                            \
-        }                                                                               \
-        return nullptr;                                                                 \
-    }                                                                                   \
-    ::hydra::IIcon* asIIcon() override                                                  \
-    {                                                                                   \
-        if (hasInterface(::hydra::InterfaceType::IIcon))                                \
-        {                                                                               \
-            return (::hydra::IIcon*)(this);                                             \
         }                                                                               \
         return nullptr;                                                                 \
     }                                                                                   \
