@@ -180,7 +180,7 @@ namespace hydra
     X_HYDRA_INTERFACE(IRewind)           \
     X_HYDRA_INTERFACE(ICheat)
 
-#define X_HYDRA_INTERFACE(name) class name;
+#define X_HYDRA_INTERFACE(name) struct name;
     X_HYDRA_INTERFACES
 #undef X_HYDRA_INTERFACE
 
