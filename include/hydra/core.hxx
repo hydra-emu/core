@@ -6,6 +6,10 @@
 #include <cstddef>
 #include <cstdint>
 
+#define HYDRA_CORE_MAJOR 0
+#define HYDRA_CORE_MINOR 1
+#define HYDRA_CORE_PATCH 0
+
 #if defined(__linux__) || defined(__APPLE__) || defined(__unix__)
 #define HC_GLOBAL __attribute__((visibility("default")))
 #elif defined(_WIN32)
@@ -222,11 +226,10 @@ namespace hydra
         virtual uint16_t getFps() = 0;
     };
 
+    // Not yet designed - do not use
     struct HC_GLOBAL ISelfDriven
     {
         virtual ~ISelfDriven() = default;
-        virtual void runLoop() = 0;
-        virtual void setUiRefreshCallback(void (*callback)()) = 0;
     };
 
     // The software rendered emulator interface, software rendered emulators inherit this
@@ -240,9 +243,15 @@ namespace hydra
     struct HC_GLOBAL IOpenGlRendered
     {
         virtual ~IOpenGlRendered() = default;
+        virtual void resetContext() = 0;
         virtual void setFbo(unsigned handle) = 0;
-        virtual void setContext(void* context) = 0;
         virtual void setGetProcAddress(void* function) = 0;
+    };
+
+    // Not yet designed - do not use
+    struct HC_GLOBAL IVulkanRendered
+    {
+        virtual ~IVulkanRendered() = default;
     };
 
     // The audio interface, emulators that support audio inherit this
