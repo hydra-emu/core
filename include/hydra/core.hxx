@@ -28,6 +28,7 @@ namespace hydra
 {
 
     constexpr int32_t TOUCH_RELEASED = 0xFFFF'FFFF;
+    constexpr int32_t BAD_CHEAT = 0xFFFF'FFFF;
 
     /// Some things we want from type_traits for compile-time type checking, but we don't want to
     /// include the whole thing
@@ -330,7 +331,7 @@ namespace hydra
     struct HC_GLOBAL ICheat
     {
         virtual ~ICheat() = default;
-        virtual uint32_t addCheat(const char* code) = 0;
+        virtual uint32_t addCheat(const uint8_t* code, uint32_t size) = 0;
         virtual void removeCheat(uint32_t id) = 0;
         virtual void enableCheat(uint32_t id) = 0;
         virtual void disableCheat(uint32_t id) = 0;
