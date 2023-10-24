@@ -245,6 +245,7 @@ namespace hydra
     {
         virtual ~IOpenGlRendered() = default;
         virtual void resetContext() = 0;
+        virtual void destroyContext() = 0;
         virtual void setFbo(unsigned handle) = 0;
         virtual void setGetProcAddress(void* function) = 0;
     };
