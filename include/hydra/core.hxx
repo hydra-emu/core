@@ -27,8 +27,8 @@
 namespace hydra
 {
 
-    constexpr int32_t TOUCH_RELEASED = 0xFFFF'FFFF;
-    constexpr int32_t BAD_CHEAT = 0xFFFF'FFFF;
+    constexpr uint32_t TOUCH_RELEASED = 0xFFFF'FFFF;
+    constexpr uint32_t BAD_CHEAT = 0xFFFF'FFFF;
 
     /// Some things we want from type_traits for compile-time type checking, but we don't want to
     /// include the whole thing
