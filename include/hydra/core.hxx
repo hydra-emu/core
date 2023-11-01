@@ -203,10 +203,21 @@ namespace hydra
     struct HC_GLOBAL IBase
     {
         virtual ~IBase() = default;
+        /**
+            Load a file into the emulator
+
+            @param type The type of file to load, either "rom" or one of the firmware specified in getInfo
+            @param path The absolute path to the file
+            @return True if the file was loaded successfully, false otherwise
+        */
         virtual bool loadFile(const char* type, const char* path) = 0;
+        // Reset the emulator
         virtual void reset() = 0;
+        // Get the native resolution of the console in pixels
         virtual Size getNativeSize() = 0;
+        // Set an output size hint for the emulator for the desired host resolution, the emulator may ignore this
         virtual void setOutputSize(Size size) = 0;
+        // Used by the frontend to check if the emulator has a certain interface
         virtual bool hasInterface(InterfaceType interface) = 0;
 #define X_HYDRA_INTERFACE(name) virtual name* as##name() = 0;
         X_HYDRA_INTERFACES
@@ -223,7 +234,11 @@ namespace hydra
     struct HC_GLOBAL IFrontendDriven
     {
         virtual ~IFrontendDriven() = default;
+
+        // Emulate one frame
         virtual void runFrame() = 0;
+
+        // Returns the target FPS
         virtual uint16_t getFps() = 0;
     };
 
@@ -237,6 +252,8 @@ namespace hydra
     struct HC_GLOBAL ISoftwareRendered
     {
         virtual ~ISoftwareRendered() = default;
+
+        // Sets the callback that the emulator must call every frame to render the frame
         virtual void setVideoCallback(void (*callback)(void* data, Size size)) = 0;
     };
 
@@ -244,9 +261,17 @@ namespace hydra
     struct HC_GLOBAL IOpenGlRendered
     {
         virtual ~IOpenGlRendered() = default;
+
+        // Called when the OpenGL context is created or recreated
         virtual void resetContext() = 0;
+
+        // Called when the OpenGL context is destroyed so that the emulator can clean up
         virtual void destroyContext() = 0;
+
+        // Called every frame to set the current framebuffer object the emulator must render to
         virtual void setFbo(unsigned handle) = 0;
+
+        // Called before the first resetContext call to set the getProcAddress function
         virtual void setGetProcAddress(void* function) = 0;
     };
 
@@ -279,7 +304,11 @@ namespace hydra
     struct HC_GLOBAL IInput
     {
         virtual ~IInput() = default;
+
+        // Set the pollInputCallback, this is called whenever the emulator needs to poll input
         virtual void setPollInputCallback(void (*callback)()) = 0;
+
+        // Set the getButtonCallback, this is called whenever the emulator needs to get the state of a button
         virtual void setCheckButtonCallback(int32_t (*callback)(uint32_t player,
                                                                 ButtonType button)) = 0;
     };
@@ -288,7 +317,11 @@ namespace hydra
     struct HC_GLOBAL ISaveState
     {
         virtual ~ISaveState() = default;
+
+        // Save the emulator state to a buffer
         virtual SaveState saveState() = 0;
+
+        // Load the emulator state from a buffer
         virtual bool loadState(SaveState state) = 0;
     };
 
@@ -296,9 +329,17 @@ namespace hydra
     struct HC_GLOBAL IMultiplayer
     {
         virtual ~IMultiplayer() = default;
+
+        // Activate a player, this is called when the frontend wants to start using a player
         virtual void activatePlayer(uint32_t player) = 0;
+
+        // Deactivate a player, this is called when the frontend wants to stop using a player
         virtual void deactivatePlayer(uint32_t player) = 0;
+
+        // Returns the minimum number of players the system supports
         virtual uint32_t getMinimumPlayerCount() = 0;
+
+        // Returns the maximum number of players the system supports
         virtual uint32_t getMaximumPlayerCount() = 0;
     };
 
@@ -314,6 +355,14 @@ namespace hydra
     struct HC_GLOBAL IReadableMemory
     {
         virtual ~IReadableMemory() = default;
+
+        /**
+            Read memory from the emulator
+
+            @param address The address to read from
+            @param buffer The buffer to read into, must be at least num_bytes big
+            @param num_bytes The number of bytes to read
+        */
         virtual void readMemory(uint32_t address, uint8_t* buffer, uint32_t num_bytes) = 0;
     };
 
@@ -321,7 +370,11 @@ namespace hydra
     struct HC_GLOBAL IRewind
     {
         virtual ~IRewind() = default;
+
+        // Rewind the emulator by one frame
         virtual void rewindFrame() = 0;
+
+        // Returns the maximum number of frames that can be rewound
         virtual uint32_t getRewindFrameCount() = 0;
 
         // Returns true if the rewind frame count was set successfully, false otherwise
@@ -332,9 +385,33 @@ namespace hydra
     struct HC_GLOBAL ICheat
     {
         virtual ~ICheat() = default;
+
+        /**
+            Add a cheat to the emulator. The enabled state of the cheat is suggested to be false by default,
+            but the frontend will disable it immediately after adding it anyway.
+
+            @param code The cheat code as a byte array, in big endian
+            @param size The size of the cheat code in bytes
+            @return The id of the cheat, or hydra::BAD_CHEAT (0xFFFF'FFFF) if the cheat could not be added
+        */
         virtual uint32_t addCheat(const uint8_t* code, uint32_t size) = 0;
+        /**
+            Remove a cheat from the emulator
+
+            @param id The id of the cheat to remove
+        */
         virtual void removeCheat(uint32_t id) = 0;
+        /**
+            Enable a cheat
+
+            @param id The id of the cheat to enable
+        */
         virtual void enableCheat(uint32_t id) = 0;
+        /**
+            Disable a cheat
+
+            @param id The id of the cheat to disable
+        */
         virtual void disableCheat(uint32_t id) = 0;
     };
 
@@ -345,6 +422,8 @@ namespace hydra
     /// Get info about the emulator, used if the info is not already cached
     HC_API const char* getInfo(InfoType type);
 
+/// The HYDRA_CLASS macro must be included in every emulator core class in order to
+/// implement part of the IBase interface without needing to write boilerplate code
 #define HYDRA_CLASS                                                                     \
                                                                                         \
 public:                                                                                 \
