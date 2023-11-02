@@ -110,14 +110,14 @@ namespace hydra
 
     enum struct SampleType
     {
-        Int16,
-        Float,
+        Int16 = 2,
+        Float = 4,
     };
 
     enum struct ChannelType
     {
-        Mono,
-        Stereo,
+        Mono = 1,
+        Stereo = 2,
     };
 
     enum struct ButtonType
@@ -206,7 +206,8 @@ namespace hydra
         /**
             Load a file into the emulator
 
-            @param type The type of file to load, either "rom" or one of the firmware specified in getInfo
+            @param type The type of file to load, either "rom" or one of the firmware specified in
+           getInfo
             @param path The absolute path to the file
             @return True if the file was loaded successfully, false otherwise
         */
@@ -215,7 +216,8 @@ namespace hydra
         virtual void reset() = 0;
         // Get the native resolution of the console in pixels
         virtual Size getNativeSize() = 0;
-        // Set an output size hint for the emulator for the desired host resolution, the emulator may ignore this
+        // Set an output size hint for the emulator for the desired host resolution, the emulator
+        // may ignore this
         virtual void setOutputSize(Size size) = 0;
         // Used by the frontend to check if the emulator has a certain interface
         virtual bool hasInterface(InterfaceType interface) = 0;
@@ -308,7 +310,8 @@ namespace hydra
         // Set the pollInputCallback, this is called whenever the emulator needs to poll input
         virtual void setPollInputCallback(void (*callback)()) = 0;
 
-        // Set the getButtonCallback, this is called whenever the emulator needs to get the state of a button
+        // Set the getButtonCallback, this is called whenever the emulator needs to get the state of
+        // a button
         virtual void setCheckButtonCallback(int32_t (*callback)(uint32_t player,
                                                                 ButtonType button)) = 0;
     };
@@ -387,12 +390,13 @@ namespace hydra
         virtual ~ICheat() = default;
 
         /**
-            Add a cheat to the emulator. The enabled state of the cheat is suggested to be false by default,
-            but the frontend will disable it immediately after adding it anyway.
+            Add a cheat to the emulator. The enabled state of the cheat is suggested to be false by
+           default, but the frontend will disable it immediately after adding it anyway.
 
             @param code The cheat code as a byte array, in big endian
             @param size The size of the cheat code in bytes
-            @return The id of the cheat, or hydra::BAD_CHEAT (0xFFFF'FFFF) if the cheat could not be added
+            @return The id of the cheat, or hydra::BAD_CHEAT (0xFFFF'FFFF) if the cheat could not be
+           added
         */
         virtual uint32_t addCheat(const uint8_t* code, uint32_t size) = 0;
         /**
