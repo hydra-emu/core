@@ -296,7 +296,7 @@ namespace hydra
             return ChannelType::Stereo;
         }
 
-        virtual void setSampleRate(uint32_t sampleRate) = 0;
+        virtual uint32_t getSampleRate() = 0;
         virtual void setAudioCallback(void (*callback)(void* data, size_t size)) = 0;
     };
 
