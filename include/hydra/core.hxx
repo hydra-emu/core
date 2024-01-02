@@ -215,10 +215,10 @@ namespace hydra
         // Reset the emulator
         virtual void reset() = 0;
         // Get the native resolution of the console in pixels
-        virtual Size getNativeSize() = 0;
+        virtual hydra::Size getNativeSize() = 0;
         // Set an output size hint for the emulator for the desired host resolution, the emulator
         // may ignore this
-        virtual void setOutputSize(Size size) = 0;
+        virtual void setOutputSize(hydra::Size size) = 0;
         // Used by the frontend to check if the emulator has a certain interface
         virtual bool hasInterface(InterfaceType interface) = 0;
 #define X_HYDRA_INTERFACE(name) virtual name* as##name() = 0;
@@ -256,7 +256,7 @@ namespace hydra
         virtual ~ISoftwareRendered() = default;
 
         // Sets the callback that the emulator must call every frame to render the frame
-        virtual void setVideoCallback(void (*callback)(void* data, Size size)) = 0;
+        virtual void setVideoCallback(void (*callback)(void* data, hydra::Size size)) = 0;
     };
 
     // The OpenGL rendered emulator interface, OpenGL rendered emulators inherit this
