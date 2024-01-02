@@ -27,8 +27,8 @@
 namespace hydra
 {
 
-    constexpr uint32_t TOUCH_RELEASED = 0xFFFF'FFFF;
-    constexpr uint32_t BAD_CHEAT = 0xFFFF'FFFF;
+    constexpr uint32_t TOUCH_RELEASED = 0xFFFFFFFF;
+    constexpr uint32_t BAD_CHEAT = 0xFFFFFFFF;
 
     /// Some things we want from type_traits for compile-time type checking, but we don't want to
     /// include the whole thing
@@ -395,7 +395,7 @@ namespace hydra
 
             @param code The cheat code as a byte array, in big endian
             @param size The size of the cheat code in bytes
-            @return The id of the cheat, or hydra::BAD_CHEAT (0xFFFF'FFFF) if the cheat could not be
+            @return The id of the cheat, or hydra::BAD_CHEAT (0xFFFFFFFF) if the cheat could not be
            added
         */
         virtual uint32_t addCheat(const uint8_t* code, uint32_t size) = 0;
