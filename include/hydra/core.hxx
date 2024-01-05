@@ -182,7 +182,6 @@ namespace hydra
     X_HYDRA_INTERFACE(IInput)            \
     X_HYDRA_INTERFACE(ISaveState)        \
     X_HYDRA_INTERFACE(IMultiplayer)      \
-    X_HYDRA_INTERFACE(ILog)              \
     X_HYDRA_INTERFACE(IReadableMemory)   \
     X_HYDRA_INTERFACE(IRewind)           \
     X_HYDRA_INTERFACE(ICheat)
@@ -346,13 +345,6 @@ namespace hydra
         virtual uint32_t getMaximumPlayerCount() = 0;
     };
 
-    // Log interface, emulators that support logging through the frontend inherit this
-    struct HC_GLOBAL ILog
-    {
-        virtual ~ILog() = default;
-        virtual void setLogCallback(LogTarget target, void (*callback)(const char* message)) = 0;
-    };
-
     // Readable memory interface, emulators that support the frontend reading their memory inherit
     // this. This will be used for debugging purposes and for RetroAchievements
     struct HC_GLOBAL IReadableMemory
@@ -362,11 +354,12 @@ namespace hydra
         /**
             Read memory from the emulator
 
-            @param address The address to read from
+            @param address The address to read from, in little endian
+            @param address_size The size of the address in bytes
             @param buffer The buffer to read into, must be at least num_bytes big
             @param num_bytes The number of bytes to read
         */
-        virtual void readMemory(uint32_t address, uint8_t* buffer, uint32_t num_bytes) = 0;
+        virtual void readMemory(void* address, uint32_t address_size, uint8_t* buffer, uint32_t num_bytes) = 0;
     };
 
     // Rewind interface, emulators that support rewinding inherit this
@@ -489,12 +482,6 @@ public:                                                                         
                     hydra::IMultiplayer,                                                \
                     ::hydra::type_traits::remove_pointer<decltype(this)>::type>::value; \
             }                                                                           \
-            case ::hydra::InterfaceType::ILog:                                          \
-            {                                                                           \
-                return ::hydra::type_traits::is_base_of<                                \
-                    hydra::ILog,                                                        \
-                    ::hydra::type_traits::remove_pointer<decltype(this)>::type>::value; \
-            }                                                                           \
             case ::hydra::InterfaceType::IReadableMemory:                               \
             {                                                                           \
                 return ::hydra::type_traits::is_base_of<                                \
@@ -586,14 +573,6 @@ public:                                                                         
         if (hasInterface(::hydra::InterfaceType::IMultiplayer))                         \
         {                                                                               \
             return (::hydra::IMultiplayer*)(this);                                      \
-        }                                                                               \
-        return nullptr;                                                                 \
-    }                                                                                   \
-    ::hydra::ILog* asILog() override                                                    \
-    {                                                                                   \
-        if (hasInterface(::hydra::InterfaceType::ILog))                                 \
-        {                                                                               \
-            return (::hydra::ILog*)(this);                                              \
         }                                                                               \
         return nullptr;                                                                 \
     }                                                                                   \
