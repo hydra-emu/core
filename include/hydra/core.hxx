@@ -165,9 +165,9 @@ namespace hydra
         Version,
         License,
         Website,
-        Extensions,
-        Firmware,
-        IconData,
+        Extensions, // Comma separated list of extensions
+        Settings,   // TOML format. See wiki for more info
+        IconData,   // Raw pixels in 32 bit RGBA format
         IconWidth,
         IconHeight,
     };
