@@ -18,6 +18,8 @@
 #else
 #define HC_GLOBAL __declspec(dllexport)
 #endif
+#elif defined(__EMSCRIPTEN__)
+#define HC_GLOBAL __attribute__((used))
 #else
 #define HC_GLOBAL
 #pragma message("WARNING: Unknown platform when building hydra core")
@@ -420,8 +422,8 @@ namespace hydra
     {
         virtual ~IConfigurable() = default;
 
-        virtual void setGetCallback(const char*(*callback)(const char* key)) = 0;
-        virtual void setSetCallback(void(*callback)(const char* key, const char* value)) = 0;
+        virtual void setGetCallback(const char* (*callback)(const char* key)) = 0;
+        virtual void setSetCallback(void (*callback)(const char* key, const char* value)) = 0;
     };
 
     /// Create an emulator and return a base interface pointer
