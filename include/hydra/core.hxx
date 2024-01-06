@@ -186,7 +186,8 @@ namespace hydra
     X_HYDRA_INTERFACE(IMultiplayer)      \
     X_HYDRA_INTERFACE(IReadableMemory)   \
     X_HYDRA_INTERFACE(IRewind)           \
-    X_HYDRA_INTERFACE(ICheat)
+    X_HYDRA_INTERFACE(ICheat)            \
+    X_HYDRA_INTERFACE(IConfigurable)
 
 #define X_HYDRA_INTERFACE(name) struct name;
     X_HYDRA_INTERFACES
@@ -415,6 +416,14 @@ namespace hydra
         virtual void disableCheat(uint32_t id) = 0;
     };
 
+    struct HC_GLOBAL IConfigurable
+    {
+        virtual ~IConfigurable() = default;
+
+        virtual void setGetCallback(const char*(*callback)(const char* key)) = 0;
+        virtual void setSetCallback(void(*callback)(const char* key, const char* value)) = 0;
+    };
+
     /// Create an emulator and return a base interface pointer
     HC_API IBase* createEmulator();
     /// Destroy an emulator using a base interface pointer
@@ -501,6 +510,12 @@ public:                                                                         
             {                                                                           \
                 return ::hydra::type_traits::is_base_of<                                \
                     hydra::ICheat,                                                      \
+                    ::hydra::type_traits::remove_pointer<decltype(this)>::type>::value; \
+            }                                                                           \
+            case ::hydra::InterfaceType::IConfigurable:                                 \
+            {                                                                           \
+                return ::hydra::type_traits::is_base_of<                                \
+                    hydra::IConfigurable,                                               \
                     ::hydra::type_traits::remove_pointer<decltype(this)>::type>::value; \
             }                                                                           \
             default:                                                                    \
@@ -600,6 +615,14 @@ public:                                                                         
         if (hasInterface(::hydra::InterfaceType::ICheat))                               \
         {                                                                               \
             return (::hydra::ICheat*)(this);                                            \
+        }                                                                               \
+        return nullptr;                                                                 \
+    }                                                                                   \
+    ::hydra::IConfigurable* asIConfigurable() override                                  \
+    {                                                                                   \
+        if (hasInterface(::hydra::InterfaceType::IConfigurable))                        \
+        {                                                                               \
+            return (::hydra::IConfigurable*)(this);                                     \
         }                                                                               \
         return nullptr;                                                                 \
     }                                                                                   \
