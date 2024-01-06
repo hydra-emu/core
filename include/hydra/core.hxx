@@ -166,8 +166,10 @@ namespace hydra
         License,
         Website,
         Extensions, // Comma separated list of extensions
-        Settings,   // TOML format. See wiki for more info
-        IconData,   // Raw pixels in 32 bit RGBA format
+        Settings,   // TOML format to auto-generate core specific settings on runtime
+                    // Read TOML.md for more information
+        IconData, // Raw pixels in 32 bit RGBA format - you can convert images to this format using
+                  // the imagemagick command: `convert my_image.png -depth 8 RGBA:output.raw`
         IconWidth,
         IconHeight,
     };
@@ -359,7 +361,8 @@ namespace hydra
             @param buffer The buffer to read into, must be at least num_bytes big
             @param num_bytes The number of bytes to read
         */
-        virtual void readMemory(void* address, uint32_t address_size, uint8_t* buffer, uint32_t num_bytes) = 0;
+        virtual void readMemory(void* address, uint32_t address_size, uint8_t* buffer,
+                                uint32_t num_bytes) = 0;
     };
 
     // Rewind interface, emulators that support rewinding inherit this
