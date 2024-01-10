@@ -176,6 +176,12 @@ namespace hydra
         IconHeight,
     };
 
+    enum class PixelFormat
+    {
+        RGBA,
+        BGRA,
+    };
+
 #define X_HYDRA_INTERFACES               \
     X_HYDRA_INTERFACE(IBase)             \
     X_HYDRA_INTERFACE(IFrontendDriven)   \
@@ -261,6 +267,11 @@ namespace hydra
 
         // Sets the callback that the emulator must call every frame to render the frame
         virtual void setVideoCallback(void (*callback)(void* data, hydra::Size size)) = 0;
+
+        virtual hydra::PixelFormat getPixelFormat()
+        {
+            return hydra::PixelFormat::RGBA;
+        }
     };
 
     // The OpenGL rendered emulator interface, OpenGL rendered emulators inherit this
