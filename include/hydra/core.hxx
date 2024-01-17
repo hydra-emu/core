@@ -10,6 +10,12 @@
 #define HYDRA_CORE_MINOR 1
 #define HYDRA_CORE_PATCH 0
 
+#ifdef __cplusplus
+#define HC_EXTERN_C extern "C"
+#else
+#define HC_EXTERN_C
+#endif
+
 #if defined(__linux__) || defined(__APPLE__) || defined(__unix__)
 #define HC_GLOBAL __attribute__((visibility("default")))
 #elif defined(_WIN32)
@@ -24,7 +30,7 @@
 #define HC_GLOBAL
 #pragma message("WARNING: Unknown platform when building hydra core")
 #endif
-#define HC_API extern "C" HC_GLOBAL
+#define HC_API HC_EXTERN_C HC_GLOBAL
 
 namespace hydra
 {
@@ -97,18 +103,6 @@ namespace hydra
         uint8_t* data;
         size_t size;
     } SaveState;
-
-    enum struct LogTarget
-    {
-        Warning,
-        Error,
-        Debug,
-        Info,
-        VerboseI,
-        VerboseII,
-        VerboseIII,
-        VerboseIV,
-    };
 
     enum struct SampleType
     {
