@@ -174,6 +174,11 @@ namespace hydra
     {
         RGBA,
         BGRA,
+        ARGB,
+        ABGR,
+        RGBA5551,
+
+        Invalid,
     };
 
 #define X_HYDRA_INTERFACES               \
