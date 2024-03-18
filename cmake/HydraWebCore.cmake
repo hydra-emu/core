@@ -1,6 +1,6 @@
 # Macro for web builds
 
-macro(hydra_web_library)
+macro(hydra_web_core)
     if (EMSCRIPTEN)
         set_property(GLOBAL PROPERTY TARGET_SUPPORTS_SHARED_LIBS TRUE)
         set(CMAKE_SHARED_LIBRARY_CREATE_C_FLAGS "-s SIDE_MODULE=1")
