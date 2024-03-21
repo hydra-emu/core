@@ -1,7 +1,7 @@
 /**
     @file
 
-    The hydra core API
+    @brief The hydra core API
 
     The hydra core API is a C API that allows for the creation of 'cores' that can be run in a frontend.
     A core is a piece of software that provides some sort of video and/or audio output,
@@ -46,8 +46,6 @@
 /// and a `type` field to identify the type of the next struct.
 /// This is useful for future-proofing the API, as it allows for adding new fields to existing structs without breaking compatibility.
 /// If a structure allows for extensions, it will explicitly say so in the documentation for that structure.
-
-
 
 #pragma once
 
@@ -352,15 +350,15 @@ typedef struct HcCoreInfo {
     const char* license;
     HcContentInfo* loadableContentInfo;
     int loadableContentInfoCount;
-    HcImageData icon;
+    HcImageData* icon;
 } HcCoreInfo;
 
 typedef struct HcEnvironmentInfo {
     HcStructureType type;
     void* next;
     HcDriveMode driveMode;
-    HcVideoInfo video;
-    HcAudioInfo audio;
+    HcVideoInfo* video;
+    HcAudioInfo* audio;
 } HcEnvironmentInfo;
 
 typedef struct HcDestroyInfo {
@@ -460,6 +458,14 @@ HYDRA_API_IMPORT HYDRA_API_ATTR HcResult HYDRA_API_CALL hcPushSamples(const HcAu
     @return ::HC_ERROR_NOT_SOFTWARE_RENDERED
 */
 HYDRA_API_IMPORT HYDRA_API_ATTR HcResult HYDRA_API_CALL hcSwPushVideoFrame(const HcImageData* image);
+
+/**
+    For OpenGL rendered cores, this function is called by the core to make the current thread owner of the OpenGL context.
+    Should be called before the core starts rendering.
+    @return ::HC_SUCCESS
+    @return ::HC_ERROR_NOT_OPENGL_RENDERED
+*/
+HYDRA_API_IMPORT HYDRA_API_ATTR HcResult HYDRA_API_CALL hcGlMakeCurrent();
 
 /**
     For OpenGL rendered cores, this function is called by the core to swap buffers and render any overlays.
