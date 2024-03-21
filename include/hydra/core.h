@@ -57,18 +57,6 @@
 #define HYDRA_CORE_MINOR 1
 #define HYDRA_CORE_PATCH 0
 
-#ifndef HYDRA_API_IMPORT
-#if defined(_WIN32) || defined(__CYGWIN__) || defined(__MINGW32__)
-#ifdef __GNUC__
-#define HYDRA_API_IMPORT __attribute__((__dllimport__))
-#else
-#define HYDRA_API_IMPORT __declspec(dllimport)
-#endif
-#else
-#define HYDRA_API_IMPORT __attribute__((visibility("default")))
-#endif
-#endif
-
 #ifndef HYDRA_API_EXPORT
 #if defined(_WIN32) || defined(__CYGWIN__) || defined(__MINGW32__)
 #ifdef __GNUC__
@@ -116,6 +104,8 @@ typedef enum HcResult {
     HC_ERROR_NOT_VULKAN_RENDERED = -13, ///< The core is not Vulkan rendered.
     HC_ERROR_NOT_METAL_RENDERED = -14, ///< The core is not Metal rendered.
     HC_ERROR_NOT_DIRECT3D_RENDERED = -15, ///< The core is not Direct3D rendered.
+    HC_INTERNAL_ERROR_BAD_LOADFUNCTIONPTR, ///< The load function pointer is not valid during hcInternalLoadFunctions.
+    HC_INTERNAL_ERROR_MISSING_FUNCTION, ///< A function is missing during hcInternalLoadFunctions.
 } HcResult;
 
 typedef enum HcPixelFormat {
@@ -419,7 +409,8 @@ typedef struct HcCallbacks {
     Get information about the host system.
     @param hostInfo Will be filled with information about the host system.
 */
-HYDRA_API_IMPORT HYDRA_API_ATTR void HYDRA_API_CALL hcGetHostInfo(HcHostInfo* hostInfo);
+typedef void (HYDRA_API_CALL *HcGetHostInfoPtr)(HcHostInfo* hostInfo);
+extern HcGetHostInfoPtr hcGetHostInfo;
 
 /**
     Request input state from the frontend.
@@ -429,7 +420,8 @@ HYDRA_API_IMPORT HYDRA_API_ATTR void HYDRA_API_CALL hcGetHostInfo(HcHostInfo* ho
     @return ::HC_SUCCESS
     @return ::HC_ERROR_BAD_INPUT_REQUEST
 */
-HYDRA_API_IMPORT HYDRA_API_ATTR HcResult HYDRA_API_CALL hcGetInputsSync(const HcInputRequest* const* requests, int requestCount, const int64_t* const* values);
+typedef HcResult (HYDRA_API_CALL *HcGetInputsSyncPtr)(const HcInputRequest* const* requests, int requestCount, const int64_t* const* values);
+extern HcGetInputsSyncPtr hcGetInputsSync;
 
 /**
     Reconfigure the environment the core is running in, for example when the window is resized or the frame rate changes in frontend-driven cores.
@@ -437,7 +429,8 @@ HYDRA_API_IMPORT HYDRA_API_ATTR HcResult HYDRA_API_CALL hcGetInputsSync(const Hc
     @return ::HC_SUCCESS
     @return ::HC_ERROR_BAD_ENVIRONMENT_INFO
 */
-HYDRA_API_IMPORT HYDRA_API_ATTR HcResult HYDRA_API_CALL hcReconfigureEnvironment(const HcEnvironmentInfo* environmentInfo);
+typedef HcResult (HYDRA_API_CALL *HcReconfigureEnvironmentPtr)(const HcEnvironmentInfo* environmentInfo);
+extern HcReconfigureEnvironmentPtr hcReconfigureEnvironment;
 
 /**
     For not fully self-driven cores (so cores that use ::HC_DRIVE_MODE_SELF_DRIVEN_EXCEPT_AUDIO or ::HC_DRIVE_MODE_FRONTEND_DRIVEN),
@@ -449,7 +442,8 @@ HYDRA_API_IMPORT HYDRA_API_ATTR HcResult HYDRA_API_CALL hcReconfigureEnvironment
     @return ::HC_ERROR_AUDIO_OVERRUN
     @return ::HC_ERROR_FULLY_SELF_DRIVEN
 */
-HYDRA_API_IMPORT HYDRA_API_ATTR HcResult HYDRA_API_CALL hcPushSamples(const HcAudioData* audioData);
+typedef HcResult (HYDRA_API_CALL *HcPushSamplesPtr)(const HcAudioData* audioData);
+extern HcPushSamplesPtr hcPushSamples;
 
 /**
     For software rendered cores, this function is called by the core to push a video frame to the frontend.
@@ -457,7 +451,8 @@ HYDRA_API_IMPORT HYDRA_API_ATTR HcResult HYDRA_API_CALL hcPushSamples(const HcAu
     @return ::HC_SUCCESS
     @return ::HC_ERROR_NOT_SOFTWARE_RENDERED
 */
-HYDRA_API_IMPORT HYDRA_API_ATTR HcResult HYDRA_API_CALL hcSwPushVideoFrame(const HcImageData* image);
+typedef HcResult (HYDRA_API_CALL *HcSwPushVideoFramePtr)(const HcImageData* image);
+extern HcSwPushVideoFramePtr hcSwPushVideoFrame;
 
 /**
     For OpenGL rendered cores, this function is called by the core to make the current thread owner of the OpenGL context.
@@ -465,7 +460,8 @@ HYDRA_API_IMPORT HYDRA_API_ATTR HcResult HYDRA_API_CALL hcSwPushVideoFrame(const
     @return ::HC_SUCCESS
     @return ::HC_ERROR_NOT_OPENGL_RENDERED
 */
-HYDRA_API_IMPORT HYDRA_API_ATTR HcResult HYDRA_API_CALL hcGlMakeCurrent();
+typedef HcResult (HYDRA_API_CALL *HcGlMakeCurrentPtr)();
+extern HcGlMakeCurrentPtr hcGlMakeCurrent;
 
 /**
     For OpenGL rendered cores, this function is called by the core to swap buffers and render any overlays.
@@ -473,7 +469,8 @@ HYDRA_API_IMPORT HYDRA_API_ATTR HcResult HYDRA_API_CALL hcGlMakeCurrent();
     @return ::HC_SUCCESS
     @return ::HC_ERROR_NOT_OPENGL_RENDERED
 */
-HYDRA_API_IMPORT HYDRA_API_ATTR HcResult HYDRA_API_CALL hcGlSwapBuffers();
+typedef HcResult (HYDRA_API_CALL *HcGlSwapBuffersPtr)();
+extern HcGlSwapBuffersPtr hcGlSwapBuffers;
 
 /**
     For OpenGL rendered cores, this function is called by the core to get a function pointer to an OpenGL function.
@@ -481,7 +478,8 @@ HYDRA_API_IMPORT HYDRA_API_ATTR HcResult HYDRA_API_CALL hcGlSwapBuffers();
     @param name The name of the OpenGL function to get a pointer to.
     @return A pointer to the OpenGL function, or nullptr if the function is not found.
 */
-HYDRA_API_IMPORT HYDRA_API_ATTR void* HYDRA_API_CALL hcGlGetProcAddress(const char* name);
+typedef void* (HYDRA_API_CALL *HcGlGetProcAddressPtr)(const char* name);
+extern HcGlGetProcAddressPtr hcGlGetProcAddress;
 
 /**
     For frontend-driven cores, this function sets the callbacks that the frontend will call to drive the core's main loop.
@@ -489,9 +487,8 @@ HYDRA_API_IMPORT HYDRA_API_ATTR void* HYDRA_API_CALL hcGlGetProcAddress(const ch
     @return ::HC_SUCCESS
     @return ::HC_ERROR_NOT_ALL_CALLBACKS_SET
 */
-HYDRA_API_IMPORT HYDRA_API_ATTR HcResult HYDRA_API_CALL hcSetCallbacks(const HcCallbacks* callbacks);
-
-/// Exported functions, these need to be defined by the core
+typedef HcResult (HYDRA_API_CALL *HcSetCallbacksPtr)(const HcCallbacks* callbacks);
+extern HcSetCallbacksPtr hcSetCallbacks;
 
 /**
     Get information about the core. Will be called one time, once the core is loaded.
