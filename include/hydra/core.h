@@ -65,7 +65,7 @@
 #define HYDRA_API_IMPORT __declspec(dllimport)
 #endif
 #else
-#define HYDRA_API_IMPORT 
+#define HYDRA_API_IMPORT __attribute__((visibility("default")))
 #endif
 #endif
 
