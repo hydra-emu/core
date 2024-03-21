@@ -10,6 +10,11 @@ HcGlSwapBuffersPtr hcGlSwapBuffers = NULL;
 HcGlGetProcAddressPtr hcGlGetProcAddress = NULL;
 HcSetCallbacksPtr hcSetCallbacks = NULL;
 
+/**
+    The frontend will call this function with a pointer that can load the function pointers.
+    This is pretty much what happens when you use a loader in OpenGL to load the function pointers,
+    for example gladLoadGLLoader where you pass something like SDL_GL_GetProcAddress or glfwGetProcAddress etc.
+*/
 HYDRA_API_EXPORT HYDRA_API_ATTR HcResult HYDRA_API_CALL hcInternalLoadFunctions(void*(*loadFunctionPtr)(const char*)) {
     if (!loadFunctionPtr) {
         return HC_INTERNAL_ERROR_BAD_LOADFUNCTIONPTR;
