@@ -1,5 +1,20 @@
 /**
+    @file
+
     The hydra core API
+
+    The hydra core API is a C API that allows for the creation of 'cores' that can be run in a frontend.
+    A core is a piece of software that provides some sort of video and/or audio output,
+    while also taking controller input from the frontend.
+    What this software does is up to the core, but in the case of hydra-emu, cores are emulators for various game consoles.
+
+    The frontend is responsible for creating a window and setting up the renderer API (OpenGL, Vulkan, etc.).
+    It then initializes the core. The core can then decide whether it wants to be self-driven or frontend-driven.
+    Self-driven cores are responsible for running their own main loop, while frontend-driven cores have their main loop driven by the frontend
+    at a configurable rate.
+    For self-driven cores, the frontends job is minimal, providing input when requested, swapping buffers when needed, optionally providing audio output,
+    and setting the run state of the core.
+
 
     MIT License
 
@@ -26,82 +41,13 @@
 
 /* ============================================================ */
 
-//// Frequently Asked Questions
+/// Structures in the hydra core API follow Vulkan's style of struct chaining, where you can provide extensions to structs.
+/// This means that each struct a pointer `next` to the next struct in the chain.
+/// and a `type` field to identify the type of the next struct.
+/// This is useful for future-proofing the API, as it allows for adding new fields to existing structs without breaking compatibility.
+/// If a structure allows for extensions, it will explicitly say so in the documentation for that structure.
 
-/// 1. What is hydra-emu?
 
-// hydra-emu is a multi-system emulator frontend. The design philosophy of hydra is based around abstraction, it aims
-// to define an interface that emulators from all generations can use and seemlessly integrate.
-
-/// 2. Why use the hydra core API, as a developer?
-
-// By using hydra you get access to emulator frontends for multiple systems, which allows you to focus on more important things such
-// as emulator development.
-// hydra is designed by emulator developers, for emulator developers, and aims to solve problems that similar multi-system emulator frontends
-// have faced in the past, and is forever free and open source.
-
-/// 3. Why use the hydra emulator frontend, as a user?
-
-// We aim to provide a pleasant, free, and portable emulation experience to users.
-
-/* ============================================================ */
-
-//// Developer reference
-
-/// 1. Decisions you have to make
-
-/// When using the hydra core API, you have to make a few fundamental decisions about your core.
-
-// Decision 1: Am I gonna let the frontend drive the emulation at a framerate that I specify, or am I going to drive the emulation loop myself?
-// Depending on your choice, do the following:
-
-// If you want the frontend to drive the emulation loop, set HcDriveMode to HC_DRIVE_MODE_FRONTEND_DRIVEN in your HcEmulatorInfo,
-// and run hcSetCallbacks to setup the functions the frontend will run to control your emulator.
-// Synchronization is handled by the frontend in this case. This means that as long as you're inside the runFrame function you
-// set using hcSetCallbacks, you can use HcPushVideo/HcPushAudio and the graphics API primitives as you wish.
-
-// If you want your core to drive the emulation loop, set HcDriveMode to HC_DRIVE_MODE_SELF_DRIVEN in your HcEmulatorInfo,
-// and do the following:
-// - Run your emulation loop as normal, starting at when hcSetEmulatorRunState sets the emulator to running
-// - When you want to render a frame, issue a HcLockRequest with name = HC_LOCK_NAME_VIDEO and lock = true to sync the video output
-// and proceed as you would in frontend-driven cores (either by calling hcPushVideoFrame if you're software rendering, or by using your selected graphics API)
-// After you're done, unlock the video semaphore with another HcLockRequest, this time with lock = false
-// - Similarly, when you want to render audio, issue a HcLockRequest with name = HC_LOCK_NAME_AUDIO and lock = true, use hcPushAudioFrame
-// then unlock the audio semaphore with another HcLockRequest, this time with lock = false
-// - For input, run hcGetInputsSync with an array of requests and an appropriately sized array of responses which will
-// lock the emulation thread until the input is ready and write responses to the response array you passed.
-// - The frontend has the right to pause or stop emulation at any moment by using hcSetEmulatorRunState. Because of this,
-// make sure to issue a HcLockRequest with name = HC_LOCK_NAME_RUN_STATE every time the current emulator run state is read or written.
-
-// Warning: Locks are supposed to be locked for as little time as possible! So for example, for the run state lock, do this:
-/*
-```c
-void run() {
-    while (true) {
-        hcLockRequest(&lockRunState);
-        if (!running) break;
-        hcLockRequest(&unlockRunState);
-
-        heavyEmulatorStuff();
-    }
-}
-```
-*/
-// do NOT do this:
-/*
-```c
-void run() {
-    while (true) {
-        hcLockRequest(&lockRunState);
-        if (!running) break;
-
-        heavyEmulatorStuff();
-        hcLockRequest(&unlockRunState);
-    }
-}
-```
-*/
-// because then the frontend will wait for the entire frame and the frontend/emulator thread separation will be detrimental
 
 #pragma once
 
@@ -113,24 +59,54 @@ void run() {
 #define HYDRA_CORE_MINOR 1
 #define HYDRA_CORE_PATCH 0
 
-#ifdef _WIN32
-#define HYDRA_API_IMPORT __declspec(dllimport)
-#define HYDRA_API_EXPORT __declspec(dllexport)
+#ifndef HYDRA_API_IMPORT
+#if defined(_WIN32) || defined(__CYGWIN__) || defined(__MINGW32__)
+#ifdef __GNUC__
+#define HYDRA_API_IMPORT __attribute__((__dllimport__))
 #else
-#define HYDRA_API_IMPORT __attribute__((visibility("default")))
-#define HYDRA_API_EXPORT __attribute__((visibility("default")))
+#define HYDRA_API_IMPORT __declspec(dllimport)
+#endif
+#else
+#define HYDRA_API_IMPORT 
+#endif
 #endif
 
-#define HYDRA_API_ATTR
+#ifndef HYDRA_API_EXPORT
+#if defined(_WIN32) || defined(__CYGWIN__) || defined(__MINGW32__)
+#ifdef __GNUC__
+#define HYDRA_API_EXPORT __attribute__((__dllexport__))
+#else
+#define HYDRA_API_EXPORT __declspec(dllexport)
+#endif
+#else
+#define HYDRA_API_EXPORT __attribute__((visibility("default")))
+#endif
+#endif
+
+#ifndef HYDRA_API_CALL
+#if defined(__GNUC__) && defined(__i386__) && !defined(__x86_64__)
+#define HYDRA_API_CALL __attribute__((cdecl))
+#elif defined(_MSC_VER) && defined(_M_X86) && !defined(_M_X64)
+#define HYDRA_API_CALL __cdecl
+#else
 #define HYDRA_API_CALL
+#endif
+#endif
+
+#ifndef HYDRA_API_ATTR
+#define HYDRA_API_ATTR
+#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 typedef enum HcResult {
-    HC_SUCCESS = 0,
-    HC_ERROR = -1,
+    HC_SUCCESS = 0, ///< The operation was successful
+    HC_ERROR_OTHER = -1,  ///< An error occurred
+    HC_ERROR_TOO_MANY_INSTANCES = -2, ///< An instance of the core cannot be created because there are too many instances of the core running
+    HC_ERROR_NO_SUCH_INSTANCE = -3, ///< This instance of the core does not exist
+    HC_ERROR_BAD_CONTENT = -4, ///< The content is not valid
 } HcResult;
 
 typedef enum HcPixelFormat {
@@ -150,14 +126,13 @@ typedef enum HcPixelFormat {
 } HcPixelFormat;
 
 typedef enum HcArchitecture {
-    HC_ARCHITECTURE_NULL = 0,
     HC_ARCHITECTURE_X86_64 = 1,
     HC_ARCHITECTURE_AARCH64 = 2,
     HC_ARCHITECTURE_WASM = 3,
+    HC_ARCHITECTURE_OTHER = 1000,
 } HcArchitecture;
 
 typedef enum HcOperatingSystem {
-    HC_OPERATING_SYSTEM_NULL = 0,
     HC_OPERATING_SYSTEM_LINUX = 1,
     HC_OPERATING_SYSTEM_WINDOWS = 2,
     HC_OPERATING_SYSTEM_MACOS = 3,
@@ -165,28 +140,28 @@ typedef enum HcOperatingSystem {
     HC_OPERATING_SYSTEM_ANDROID = 5,
     HC_OPERATING_SYSTEM_IOS = 6,
     HC_OPERATING_SYSTEM_WEB = 7,
+    HC_OPERATING_SYSTEM_OTHER = 1000,
 } HcOperatingSystem;
 
 typedef enum HcDriveMode {
-    HC_DRIVE_MODE_NULL = 0,
-    HC_DRIVE_MODE_SELF_DRIVEN = 1,
-    HC_DRIVE_MODE_FRONTEND_DRIVEN = 2,
+    HC_DRIVE_MODE_SELF_DRIVEN = 1, ///< The core is responsible for doing everything itself, except for input which is provided by the frontend
+    HC_DRIVE_MODE_SELF_DRIVEN_EXCEPT_AUDIO = 2, ///< The core is responsible for doing everything itself, except for input which is provided by the frontend, and audio that is played by pushing audio frames to the frontend
+    HC_DRIVE_MODE_FRONTEND_DRIVEN = 3, ///< The frontend drives the core loop. The frontend is responsible for calling the core's runFrame function.
 } HcDriveMode;
 
 typedef enum HcStructureType {
-    HC_STRUCTURE_TYPE_NULL,
-    HC_STRUCTURE_TYPE_EMULATOR_INFO,
+    HC_STRUCTURE_TYPE_CORE_INFO = 1,
     HC_STRUCTURE_TYPE_HOST_INFO,
     HC_STRUCTURE_TYPE_VIDEO_INFO,
     HC_STRUCTURE_TYPE_AUDIO_INFO,
     HC_STRUCTURE_TYPE_IMAGE_DATA,
     HC_STRUCTURE_TYPE_AUDIO_DATA,
-    HC_STRUCTURE_TYPE_EMULATOR_CREATE_INFO,
-    HC_STRUCTURE_TYPE_EMULATOR_DESTROY_INFO,
-    HC_STRUCTURE_TYPE_EMULATOR_RESET_INFO,
+    HC_STRUCTURE_TYPE_CORE_CREATE_INFO,
+    HC_STRUCTURE_TYPE_CORE_DESTROY_INFO,
+    HC_STRUCTURE_TYPE_CORE_RESET_INFO,
     HC_STRUCTURE_TYPE_GET_INPUT_REQUEST,
     HC_STRUCTURE_TYPE_LOCK_REQUEST,
-    HC_STRUCTURE_TYPE_EMULATOR_RUN_STATE_INFO,
+    HC_STRUCTURE_TYPE_CORE_RUN_STATE_INFO,
     HC_STRUCTURE_TYPE_CONTENT_INFO,
     HC_STRUCTURE_TYPE_CALLBACKS,
 } HcStructureType;
@@ -240,10 +215,15 @@ typedef enum HcVulkanVersion {
 
 typedef enum HcMetalVersion {
     HC_METAL_NOT_SUPPORTED = 0,
+    HC_METAL_VERSION_1_0 = 1,
+    HC_METAL_VERSION_2_0 = 1,
+    HC_METAL_VERSION_3_0 = 1,
 } HcMetalVersion;
 
 typedef enum HcDirect3DVersion {
     HC_DIRECT3D_NOT_SUPPORTED = 0,
+    HC_DIRECT3D_VERSION_11_0 = 1,
+    HC_DIRECT3D_VERSION_12_0 = 2,
 } HcDirect3DVersion;
 
 typedef enum HcRendererType {
@@ -278,9 +258,8 @@ typedef enum HcAudioChannels {
 } HcAudioChannels;
 
 typedef enum HcResetType {
-    HC_RESET_TYPE_NULL = 0,
-    HC_RESET_TYPE_SOFT = 1,
-    HC_RESET_TYPE_HARD = 2,
+    HC_RESET_TYPE_SOFT = 1, ///< Whatever the core considers a soft reset, usually equivalent to pressing the reset button on the console
+    HC_RESET_TYPE_HARD = 2, ///< Whatever the core considers a hard reset, usually equivalent to turning the console off and on again
 } HcResetType;
 
 typedef enum HcInputType {
@@ -288,19 +267,12 @@ typedef enum HcInputType {
     // TODO: add input types (eg. HC_INPUT_TYPE_ANALOG1_HORIZONTAL or HC_INPUT_TYPE_BUTTON_X)
 } HcInputType;
 
-typedef enum HcLockName {
-    HC_LOCK_NAME_NULL = 0,
-    HC_LOCK_NAME_AUDIO = 1,
-    HC_LOCK_NAME_VIDEO = 2,
-    HC_LOCK_NAME_RUN_STATE = 3,
-} HcLockName;
-
-typedef enum HcEmulatorRunState {
-    HC_EMULATOR_RUN_STATE_NULL = 0,
-    HC_EMULATOR_RUN_STATE_RUNNING = 1,
-    HC_EMULATOR_RUN_STATE_PAUSED = 2,
-    HC_EMULATOR_RUN_STATE_STOPPED = 3,
-} HcEmulatorRunState;
+typedef enum HcRunState {
+    HC_RUN_STATE_NULL = 0,    ///< The core run state is not yet set
+    HC_RUN_STATE_RUNNING = 1, ///< The core is running
+    HC_RUN_STATE_PAUSED = 2,  ///< The core is paused
+    HC_RUN_STATE_QUIT = 3,    ///< The core is stopped and will not be resumed
+} HcRunState;
 
 typedef struct HcVideoInfo {
     HcStructureType type;
@@ -330,7 +302,7 @@ typedef struct HcImageData {
     uint32_t channels;
     uint32_t stride;
     HcPixelFormat format;
-} HcIconInfo;
+} HcImageData;
 
 typedef struct HcAudioData {
     HcStructureType type;
@@ -339,10 +311,17 @@ typedef struct HcAudioData {
     HcAudioInfo info;
 } HcAudioData;
 
-typedef struct HcEmulatorInfo {
+typedef struct HcContentInfo {
     HcStructureType type;
     void* next;
-    HcDriveMode driveMode;
+    const char* name;
+    const char* description;
+    const char* extensions;
+} HcContentInfo;
+
+typedef struct HcCoreInfo {
+    HcStructureType type;
+    void* next;
     const char* coreName;
     const char* coreVersion;
     const char* systemName;
@@ -351,27 +330,29 @@ typedef struct HcEmulatorInfo {
     const char* website;
     const char* settings;
     const char* license;
-    const char** loadableContentTypes;
-    HcIconInfo icon;
-} HcEmulatorInfo;
+    HcContentInfo* loadableContentInfo;
+    int loadableContentInfoCount;
+    HcImageData icon;
+} HcCoreInfo;
 
-typedef struct HcEmulatorCreateInfo {
+typedef struct HcEnvironmentInfo {
     HcStructureType type;
     void* next;
+    HcDriveMode driveMode;
     HcVideoInfo video;
     HcAudioInfo audio;
-} HcEmulatorCreateInfo;
+} HcEnvironmentInfo;
 
-typedef struct HcEmulatorDestroyInfo {
+typedef struct HcDestroyInfo {
     HcStructureType type;
     void* next;
-} HcEmulatorDestroyInfo;
+} HcDestroyInfo;
 
-typedef struct HcEmulatorResetInfo {
+typedef struct HcResetInfo {
     HcStructureType type;
     void* next;
     HcResetType resetType;
-} HcEmulatorResetInfo;
+} HcResetInfo;
 
 typedef struct HcHostInfo {
     HcStructureType type;
@@ -394,51 +375,102 @@ typedef struct HcInputRequest {
     HcInputType inputType;
 } HcInputRequest;
 
-typedef struct HcLockRequest {
+typedef struct HcRunStateInfo {
     HcStructureType type;
     void* next;
-    HcLockName lockName;
-    bool lock;
-} HcLockRequest;
+    HcRunState runState;
+} HcRunStateInfo;
 
-typedef struct HcEmulatorRunStateInfo {
-    HcStructureType type;
-    void* next;
-    HcEmulatorRunState runState;
-} HcEmulatorRunStateInfo;
-
-typedef struct HcContentInfo {
+typedef struct HcContentLoadInfo {
     HcStructureType type;
     void* next;
     const char* name;
     const char* path;
-} HcContentInfo;
+} HcContentLoadInfo;
 
 typedef struct HcCallbacks {
     HcStructureType type;
     void* next;
-    void (*runFrame)(void* emulator);
+    void* userdata;
+    void (*runFrame)(void* userdata);
 } HcCallbacks;
 
 /// Imported functions, these are defined by the frontend
 HYDRA_API_IMPORT HYDRA_API_ATTR HcResult HYDRA_API_CALL hcGetHostInfo(HcHostInfo* info);
-HYDRA_API_IMPORT HYDRA_API_ATTR HcResult HYDRA_API_CALL hcGetInputsSync(const HcInputRequest* const* requests, int64_t* const* const values);
-HYDRA_API_IMPORT HYDRA_API_ATTR HcResult HYDRA_API_CALL hcLockRequest(const HcLockRequest* request);
-HYDRA_API_IMPORT HYDRA_API_ATTR HcResult HYDRA_API_CALL hcPushAudioFrame(const HcAudioData* audio);
+HYDRA_API_IMPORT HYDRA_API_ATTR HcResult HYDRA_API_CALL hcGetInputsSync(const HcInputRequest* const* requests, const int64_t* const* const values);
+HYDRA_API_IMPORT HYDRA_API_ATTR HcResult HYDRA_API_CALL hcReconfigureEnvironment(const HcEnvironmentInfo* info, void* instance);
 
-// For software-rendered emulator cores
-HYDRA_API_IMPORT HYDRA_API_ATTR HcResult HYDRA_API_CALL hcPushVideoFrame(const HcImageData* image);
+// For software-rendered cores
+HYDRA_API_IMPORT HYDRA_API_ATTR HcResult HYDRA_API_CALL hcSwPushVideoFrame(const HcImageData* image);
 
-// For frontend-driven emulator cores
+// For OpenGL-rendered cores
+HYDRA_API_IMPORT HYDRA_API_ATTR HcResult HYDRA_API_CALL hcGlSwapBuffers();
+
+// For frontend-driven cores
 HYDRA_API_IMPORT HYDRA_API_ATTR HcResult HYDRA_API_CALL hcSetCallbacks(const HcCallbacks* callbacks);
 
 /// Exported functions, these need to be defined by the core
-HYDRA_API_EXPORT HYDRA_API_ATTR HcResult HYDRA_API_CALL hcGetEmulatorInfo(HcEmulatorInfo* info);
-HYDRA_API_EXPORT HYDRA_API_ATTR void* HYDRA_API_CALL hcCreateEmulator(const HcEmulatorCreateInfo* info);
-HYDRA_API_EXPORT HYDRA_API_ATTR HcResult HYDRA_API_CALL hcDestroyEmulator(const HcEmulatorDestroyInfo* info, void* emulator);
-HYDRA_API_EXPORT HYDRA_API_ATTR HcResult HYDRA_API_CALL hcResetEmulator(const HcEmulatorResetInfo* info, void* emulator);
-HYDRA_API_EXPORT HYDRA_API_ATTR HcResult HYDRA_API_CALL hcSetEmulatorRunState(const HcEmulatorRunStateInfo* info, void* emulator);
-HYDRA_API_EXPORT HYDRA_API_ATTR HcResult HYDRA_API_CALL hcLoadContent(const HcContentInfo* info, /* optional */ void* emulator);
+
+/**
+    Get information about the core. Will be called one time, once the core is loaded.
+    @param info The HcCoreInfo struct to fill with information about the core.
+*/
+HYDRA_API_EXPORT HYDRA_API_ATTR void HYDRA_API_CALL hcGetCoreInfo(HcCoreInfo* info);
+
+/**
+    Create an instance of the core, and point the instance pointer to it.
+    Each core is tied to a window and a particular renderer API, configured from environmentInfo.
+    @param[out] environmentInfo Information about the environment the core is running in. This needs to be populated by the core.
+    @param[out] instance A pointer to a void* that will be set to the instance of the core.
+    @return ::HC_SUCCESS
+    @return ::HC_ERROR_TOO_MANY_INSTANCES
+    @return ::HC_ERROR_OTHER
+*/
+HYDRA_API_EXPORT HYDRA_API_ATTR HcResult HYDRA_API_CALL hcCreate(HcEnvironmentInfo* environmentInfo, void** instance);
+
+/**
+    Destroy an instance of the core.
+    @param[in] destroyInfo Information about the destruction of the core. Currently unused.
+    @param[in] instance The instance of the core to destroy.
+    @return ::HC_SUCCESS
+    @return ::HC_ERROR_NO_SUCH_INSTANCE
+    @return ::HC_ERROR_OTHER
+*/
+HYDRA_API_EXPORT HYDRA_API_ATTR HcResult HYDRA_API_CALL hcDestroy(const HcDestroyInfo* destroyInfo, void* instance);
+
+/**
+    Reset the core.
+    @param[in] resetInfo Information about the reset of the core.
+    @param[in] instance The instance of the core to reset.
+    @return ::HC_SUCCESS
+    @return ::HC_ERROR_NO_SUCH_INSTANCE
+    @return ::HC_ERROR_OTHER
+*/
+HYDRA_API_EXPORT HYDRA_API_ATTR HcResult HYDRA_API_CALL hcReset(const HcResetInfo* resetInfo, void* instance);
+
+/**
+    Set the run state of the core, as in running, paused, or quit.
+    @param[in] runInfo Information about the desired run state of the core.
+    @param[in] instance The instance of the core to set the run state of.
+*/
+HYDRA_API_EXPORT HYDRA_API_ATTR HcResult HYDRA_API_CALL hcSetRunState(const HcRunStateInfo* runInfo, void* instance);
+
+/**
+    Load content into the core.
+    @param[in] info Information about the content to load.
+    @param[in] instance (optional) The instance of the core to load the content into. If this content is not instance-specific, this can be nullptr.
+    @return ::HC_SUCCESS
+    @return ::HC_ERROR_NO_SUCH_INSTANCE
+    @return ::HC_ERROR_BAD_CONTENT
+    @return ::HC_ERROR_OTHER
+*/
+HYDRA_API_EXPORT HYDRA_API_ATTR HcResult HYDRA_API_CALL hcLoadContent(const HcContentLoadInfo* info, void* instance);
+
+/**
+    Return the error message of the last ::HC_ERROR_OTHER that occurred.
+    @return A string containing the error message, or nullptr if no error occurred.
+*/
+HYDRA_API_EXPORT HYDRA_API_ATTR const char* HYDRA_API_CALL hcGetError();
 
 #ifdef __cplusplus
 }
