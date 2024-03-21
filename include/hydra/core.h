@@ -102,11 +102,22 @@ extern "C" {
 #endif
 
 typedef enum HcResult {
-    HC_SUCCESS = 0, ///< The operation was successful
-    HC_ERROR_OTHER = -1,  ///< An error occurred
-    HC_ERROR_TOO_MANY_INSTANCES = -2, ///< An instance of the core cannot be created because there are too many instances of the core running
-    HC_ERROR_NO_SUCH_INSTANCE = -3, ///< This instance of the core does not exist
-    HC_ERROR_BAD_CONTENT = -4, ///< The content is not valid
+    HC_SUCCESS = 0, ///< The operation was successful.
+    HC_ERROR_CORE = -1,  ///< An error occurred by the core. Core should provide hcGetError with more information.
+    HC_ERROR_NOT_ALL_CALLBACKS_SET = -2, ///< Not all callbacks were set.
+    HC_ERROR_BAD_RENDERER_VERSION = -3, ///< The renderer version is not supported.
+    HC_ERROR_BAD_CONTENT = -4, ///< The content is not valid.
+    HC_ERROR_BAD_INPUT_REQUEST = -5, ///< The input request is not valid.
+    HC_ERROR_BAD_ENVIRONMENT_INFO = -6, ///< The environment info is not valid.
+    HC_ERROR_BAD_AUDIO_DATA_WANT = -7, ///< The audio data's want field is not valid.
+    HC_ERROR_BAD_AUDIO_DATA_HAVE = -8, ///< The audio data's have field is not valid.
+    HC_ERROR_AUDIO_OVERRUN = -9, ///< The audio buffer is full and cannot accept more audio data.
+    HC_ERROR_FULLY_SELF_DRIVEN = -10, ///< The core should be fully self-driven so the frontend can't accept audio data.
+    HC_ERROR_NOT_SOFTWARE_RENDERED = -11, ///< The core is not software rendered.
+    HC_ERROR_NOT_OPENGL_RENDERED = -12, ///< The core is not OpenGL rendered.
+    HC_ERROR_NOT_VULKAN_RENDERED = -13, ///< The core is not Vulkan rendered.
+    HC_ERROR_NOT_METAL_RENDERED = -14, ///< The core is not Metal rendered.
+    HC_ERROR_NOT_DIRECT3D_RENDERED = -15, ///< The core is not Direct3D rendered.
 } HcResult;
 
 typedef enum HcPixelFormat {
@@ -126,9 +137,11 @@ typedef enum HcPixelFormat {
 } HcPixelFormat;
 
 typedef enum HcArchitecture {
-    HC_ARCHITECTURE_X86_64 = 1,
-    HC_ARCHITECTURE_AARCH64 = 2,
-    HC_ARCHITECTURE_WASM = 3,
+    HC_ARCHITECTURE_X86,
+    HC_ARCHITECTURE_X86_64,
+    HC_ARCHITECTURE_AARCH32,
+    HC_ARCHITECTURE_AARCH64,
+    HC_ARCHITECTURE_WASM,
     HC_ARCHITECTURE_OTHER = 1000,
 } HcArchitecture;
 
@@ -144,8 +157,8 @@ typedef enum HcOperatingSystem {
 } HcOperatingSystem;
 
 typedef enum HcDriveMode {
-    HC_DRIVE_MODE_SELF_DRIVEN = 1, ///< The core is responsible for doing everything itself, except for input which is provided by the frontend
-    HC_DRIVE_MODE_SELF_DRIVEN_EXCEPT_AUDIO = 2, ///< The core is responsible for doing everything itself, except for input which is provided by the frontend, and audio that is played by pushing audio frames to the frontend
+    HC_DRIVE_MODE_SELF_DRIVEN = 1, ///< The core is responsible for doing everything itself, except for input which is provided by the frontend.
+    HC_DRIVE_MODE_SELF_DRIVEN_EXCEPT_AUDIO = 2, ///< The core is responsible for doing everything itself, except for input which is provided by the frontend, and audio that is played by pushing audio frames to the frontend.
     HC_DRIVE_MODE_FRONTEND_DRIVEN = 3, ///< The frontend drives the core loop. The frontend is responsible for calling the core's runFrame function.
 } HcDriveMode;
 
@@ -156,7 +169,6 @@ typedef enum HcStructureType {
     HC_STRUCTURE_TYPE_AUDIO_INFO,
     HC_STRUCTURE_TYPE_IMAGE_DATA,
     HC_STRUCTURE_TYPE_AUDIO_DATA,
-    HC_STRUCTURE_TYPE_CORE_CREATE_INFO,
     HC_STRUCTURE_TYPE_CORE_DESTROY_INFO,
     HC_STRUCTURE_TYPE_CORE_RESET_INFO,
     HC_STRUCTURE_TYPE_GET_INPUT_REQUEST,
@@ -164,6 +176,8 @@ typedef enum HcStructureType {
     HC_STRUCTURE_TYPE_CORE_RUN_STATE_INFO,
     HC_STRUCTURE_TYPE_CONTENT_INFO,
     HC_STRUCTURE_TYPE_CALLBACKS,
+    HC_STRUCTURE_TYPE_CONTENT_LOAD_INFO,
+    HC_STRUCTURE_TYPE_ENVIRONMENT_INFO,
 } HcStructureType;
 
 typedef enum HcOpenGlVersion {
@@ -221,9 +235,13 @@ typedef enum HcMetalVersion {
 } HcMetalVersion;
 
 typedef enum HcDirect3DVersion {
-    HC_DIRECT3D_NOT_SUPPORTED = 0,
-    HC_DIRECT3D_VERSION_11_0 = 1,
-    HC_DIRECT3D_VERSION_12_0 = 2,
+    HC_DIRECT3D_NOT_SUPPORTED,
+    HC_DIRECT3D_VERSION_7_0,
+    HC_DIRECT3D_VERSION_8_0,
+    HC_DIRECT3D_VERSION_9_0,
+    HC_DIRECT3D_VERSION_10_0,
+    HC_DIRECT3D_VERSION_11_0,
+    HC_DIRECT3D_VERSION_12_0,
 } HcDirect3DVersion;
 
 typedef enum HcRendererType {
@@ -258,8 +276,8 @@ typedef enum HcAudioChannels {
 } HcAudioChannels;
 
 typedef enum HcResetType {
-    HC_RESET_TYPE_SOFT = 1, ///< Whatever the core considers a soft reset, usually equivalent to pressing the reset button on the console
-    HC_RESET_TYPE_HARD = 2, ///< Whatever the core considers a hard reset, usually equivalent to turning the console off and on again
+    HC_RESET_TYPE_SOFT = 1, ///< Whatever the core considers a soft reset, usually equivalent to pressing the reset button on the console.
+    HC_RESET_TYPE_HARD = 2, ///< Whatever the core considers a hard reset, usually equivalent to turning the console off and on again.
 } HcResetType;
 
 typedef enum HcInputType {
@@ -268,39 +286,39 @@ typedef enum HcInputType {
 } HcInputType;
 
 typedef enum HcRunState {
-    HC_RUN_STATE_NULL = 0,    ///< The core run state is not yet set
-    HC_RUN_STATE_RUNNING = 1, ///< The core is running
-    HC_RUN_STATE_PAUSED = 2,  ///< The core is paused
-    HC_RUN_STATE_QUIT = 3,    ///< The core is stopped and will not be resumed
+    HC_RUN_STATE_NULL = 0,    ///< The core run state is not yet set.
+    HC_RUN_STATE_RUNNING = 1, ///< The core is running.
+    HC_RUN_STATE_PAUSED = 2,  ///< The core is paused.
+    HC_RUN_STATE_QUIT = 3,    ///< The core is stopped and will not be resumed.
 } HcRunState;
 
 typedef struct HcVideoInfo {
     HcStructureType type;
     void* next;
-    HcRendererType renderer;
-    uint32_t rendererVersion;
-    uint32_t width;
-    uint32_t height;
-    uint32_t frameRate;
-    HcPixelFormat format;
+    HcRendererType rendererType; ///< The type of renderer the core wants to use.
+    uint32_t rendererVersion; ///< The version of the renderer the core wants to use.
+    uint32_t width; ///< The width of the video output.
+    uint32_t height; ///< The height of the video output.
+    uint32_t frameRate; ///< The frame rate of the video output, in frames per second.
+    HcPixelFormat format; ///< The pixel format of the video output.
 } HcVideoInfo;
 
 typedef struct HcAudioInfo {
     HcStructureType type;
     void* next;
-    HcAudioFormat format;
-    HcAudioChannels channels;
-    uint32_t sampleRate;
+    HcAudioFormat format; ///< The audio sample format.
+    HcAudioChannels channels; ///< The number of audio channels.
+    uint32_t sampleRate; ///< The sample rate of the audio output, in samples per second.
 } HcAudioInfo;
 
 typedef struct HcImageData {
     HcStructureType type;
     void* next;
-    uint8_t* data;
-    uint32_t width;
-    uint32_t height;
-    uint32_t channels;
-    uint32_t stride;
+    uint8_t* data; ///< The image bytes. Should be sized stride * height.
+    uint32_t width; ///< The width of the image.
+    uint32_t height; ///< The height of the image.
+    uint32_t channels; ///< The number of channels in the image. Eg. 3 for RGB, 4 for RGBA.
+    uint32_t stride; ///< The number of bytes in a row of the image. Should be at least width * channels.
     HcPixelFormat format;
 } HcImageData;
 
@@ -308,7 +326,9 @@ typedef struct HcAudioData {
     HcStructureType type;
     void* next;
     uint8_t* data;
-    HcAudioInfo info;
+    uint32_t sampleCount;
+    HcAudioInfo want;
+    HcAudioInfo have;
 } HcAudioData;
 
 typedef struct HcContentInfo {
@@ -396,17 +416,73 @@ typedef struct HcCallbacks {
 } HcCallbacks;
 
 /// Imported functions, these are defined by the frontend
-HYDRA_API_IMPORT HYDRA_API_ATTR HcResult HYDRA_API_CALL hcGetHostInfo(HcHostInfo* info);
-HYDRA_API_IMPORT HYDRA_API_ATTR HcResult HYDRA_API_CALL hcGetInputsSync(const HcInputRequest* const* requests, const int64_t* const* const values);
-HYDRA_API_IMPORT HYDRA_API_ATTR HcResult HYDRA_API_CALL hcReconfigureEnvironment(const HcEnvironmentInfo* info, void* instance);
 
-// For software-rendered cores
+/**
+    Get information about the host system.
+    @param hostInfo Will be filled with information about the host system.
+*/
+HYDRA_API_IMPORT HYDRA_API_ATTR void HYDRA_API_CALL hcGetHostInfo(HcHostInfo* hostInfo);
+
+/**
+    Request input state from the frontend.
+    @param requests An array of pointers to HcInputRequest structs, each containing information about the input to request.
+    @param requestCount The number of input requests in the requests array.
+    @param values An array of pointers to int64_t, each containing the value of the input requested.
+    @return ::HC_SUCCESS
+    @return ::HC_ERROR_BAD_INPUT_REQUEST
+*/
+HYDRA_API_IMPORT HYDRA_API_ATTR HcResult HYDRA_API_CALL hcGetInputsSync(const HcInputRequest* const* requests, int requestCount, const int64_t* const* values);
+
+/**
+    Reconfigure the environment the core is running in, for example when the window is resized or the frame rate changes in frontend-driven cores.
+    @param environmentInfo Information about the new environment. Renderer changes are ignored.
+    @return ::HC_SUCCESS
+    @return ::HC_ERROR_BAD_ENVIRONMENT_INFO
+*/
+HYDRA_API_IMPORT HYDRA_API_ATTR HcResult HYDRA_API_CALL hcReconfigureEnvironment(const HcEnvironmentInfo* environmentInfo);
+
+/**
+    For not fully self-driven cores (so cores that use ::HC_DRIVE_MODE_SELF_DRIVEN_EXCEPT_AUDIO or ::HC_DRIVE_MODE_FRONTEND_DRIVEN),
+    this function is called by the core to push an arbitrary amount of audio samples to the frontend.
+    @param audioData The audio data to push to the frontend.
+    @return ::HC_SUCCESS
+    @return ::HC_ERROR_BAD_AUDIO_DATA_WANT
+    @return ::HC_ERROR_BAD_AUDIO_DATA_HAVE
+    @return ::HC_ERROR_AUDIO_OVERRUN
+    @return ::HC_ERROR_FULLY_SELF_DRIVEN
+*/
+HYDRA_API_IMPORT HYDRA_API_ATTR HcResult HYDRA_API_CALL hcPushSamples(const HcAudioData* audioData);
+
+/**
+    For software rendered cores, this function is called by the core to push a video frame to the frontend.
+    @param image The image data to push to the frontend.
+    @return ::HC_SUCCESS
+    @return ::HC_ERROR_NOT_SOFTWARE_RENDERED
+*/
 HYDRA_API_IMPORT HYDRA_API_ATTR HcResult HYDRA_API_CALL hcSwPushVideoFrame(const HcImageData* image);
 
-// For OpenGL-rendered cores
+/**
+    For OpenGL rendered cores, this function is called by the core to swap buffers and render any overlays.
+    Should be called after the core has finished rendering a frame.
+    @return ::HC_SUCCESS
+    @return ::HC_ERROR_NOT_OPENGL_RENDERED
+*/
 HYDRA_API_IMPORT HYDRA_API_ATTR HcResult HYDRA_API_CALL hcGlSwapBuffers();
 
-// For frontend-driven cores
+/**
+    For OpenGL rendered cores, this function is called by the core to get a function pointer to an OpenGL function.
+    You can use it with GLAD or similar functions to load the OpenGL functions, as you normally would.
+    @param name The name of the OpenGL function to get a pointer to.
+    @return A pointer to the OpenGL function, or nullptr if the function is not found.
+*/
+HYDRA_API_IMPORT HYDRA_API_ATTR void* HYDRA_API_CALL hcGlGetProcAddress(const char* name);
+
+/**
+    For frontend-driven cores, this function sets the callbacks that the frontend will call to drive the core's main loop.
+    @param callbacks The callbacks to set.
+    @return ::HC_SUCCESS
+    @return ::HC_ERROR_NOT_ALL_CALLBACKS_SET
+*/
 HYDRA_API_IMPORT HYDRA_API_ATTR HcResult HYDRA_API_CALL hcSetCallbacks(const HcCallbacks* callbacks);
 
 /// Exported functions, these need to be defined by the core
@@ -418,56 +494,47 @@ HYDRA_API_IMPORT HYDRA_API_ATTR HcResult HYDRA_API_CALL hcSetCallbacks(const HcC
 HYDRA_API_EXPORT HYDRA_API_ATTR void HYDRA_API_CALL hcGetCoreInfo(HcCoreInfo* info);
 
 /**
-    Create an instance of the core, and point the instance pointer to it.
+    Initialize the core.
     Each core is tied to a window and a particular renderer API, configured from environmentInfo.
     @param[out] environmentInfo Information about the environment the core is running in. This needs to be populated by the core.
-    @param[out] instance A pointer to a void* that will be set to the instance of the core.
     @return ::HC_SUCCESS
-    @return ::HC_ERROR_TOO_MANY_INSTANCES
-    @return ::HC_ERROR_OTHER
+    @return ::HC_ERROR_CORE
 */
-HYDRA_API_EXPORT HYDRA_API_ATTR HcResult HYDRA_API_CALL hcCreate(HcEnvironmentInfo* environmentInfo, void** instance);
+HYDRA_API_EXPORT HYDRA_API_ATTR HcResult HYDRA_API_CALL hcCreate(HcEnvironmentInfo* environmentInfo);
 
 /**
-    Destroy an instance of the core.
+    Destroy the core, freeing any resources it has allocated.
     @param[in] destroyInfo Information about the destruction of the core. Currently unused.
-    @param[in] instance The instance of the core to destroy.
     @return ::HC_SUCCESS
-    @return ::HC_ERROR_NO_SUCH_INSTANCE
-    @return ::HC_ERROR_OTHER
+    @return ::HC_ERROR_CORE
 */
-HYDRA_API_EXPORT HYDRA_API_ATTR HcResult HYDRA_API_CALL hcDestroy(const HcDestroyInfo* destroyInfo, void* instance);
+HYDRA_API_EXPORT HYDRA_API_ATTR HcResult HYDRA_API_CALL hcDestroy(const HcDestroyInfo* destroyInfo);
 
 /**
     Reset the core.
     @param[in] resetInfo Information about the reset of the core.
-    @param[in] instance The instance of the core to reset.
     @return ::HC_SUCCESS
-    @return ::HC_ERROR_NO_SUCH_INSTANCE
-    @return ::HC_ERROR_OTHER
+    @return ::HC_ERROR_CORE
 */
-HYDRA_API_EXPORT HYDRA_API_ATTR HcResult HYDRA_API_CALL hcReset(const HcResetInfo* resetInfo, void* instance);
+HYDRA_API_EXPORT HYDRA_API_ATTR HcResult HYDRA_API_CALL hcReset(const HcResetInfo* resetInfo);
 
 /**
     Set the run state of the core, as in running, paused, or quit.
     @param[in] runInfo Information about the desired run state of the core.
-    @param[in] instance The instance of the core to set the run state of.
 */
-HYDRA_API_EXPORT HYDRA_API_ATTR HcResult HYDRA_API_CALL hcSetRunState(const HcRunStateInfo* runInfo, void* instance);
+HYDRA_API_EXPORT HYDRA_API_ATTR HcResult HYDRA_API_CALL hcSetRunState(const HcRunStateInfo* runInfo);
 
 /**
     Load content into the core.
     @param[in] info Information about the content to load.
-    @param[in] instance (optional) The instance of the core to load the content into. If this content is not instance-specific, this can be nullptr.
     @return ::HC_SUCCESS
-    @return ::HC_ERROR_NO_SUCH_INSTANCE
     @return ::HC_ERROR_BAD_CONTENT
-    @return ::HC_ERROR_OTHER
+    @return ::HC_ERROR_CORE
 */
-HYDRA_API_EXPORT HYDRA_API_ATTR HcResult HYDRA_API_CALL hcLoadContent(const HcContentLoadInfo* info, void* instance);
+HYDRA_API_EXPORT HYDRA_API_ATTR HcResult HYDRA_API_CALL hcLoadContent(const HcContentLoadInfo* info);
 
 /**
-    Return the error message of the last ::HC_ERROR_OTHER that occurred.
+    Return the error message of the last ::HC_ERROR_CORE that occurred.
     @return A string containing the error message, or nullptr if no error occurred.
 */
 HYDRA_API_EXPORT HYDRA_API_ATTR const char* HYDRA_API_CALL hcGetError();
