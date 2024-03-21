@@ -180,25 +180,25 @@ typedef enum HcStructureType {
 
 typedef enum HcOpenGlVersion {
     HC_OPENGL_NOT_SUPPORTED = 0,
-    HC_OPENGL_VERSION_1_0 = 1,
-    HC_OPENGL_VERSION_1_1 = 2,
-    HC_OPENGL_VERSION_1_2 = 3,
-    HC_OPENGL_VERSION_1_3 = 4,
-    HC_OPENGL_VERSION_1_4 = 5,
-    HC_OPENGL_VERSION_1_5 = 6,
-    HC_OPENGL_VERSION_2_0 = 7,
-    HC_OPENGL_VERSION_2_1 = 8,
-    HC_OPENGL_VERSION_3_0 = 9,
-    HC_OPENGL_VERSION_3_1 = 10,
-    HC_OPENGL_VERSION_3_2 = 11,
-    HC_OPENGL_VERSION_3_3 = 12,
-    HC_OPENGL_VERSION_4_0 = 13,
-    HC_OPENGL_VERSION_4_1 = 14,
-    HC_OPENGL_VERSION_4_2 = 15,
-    HC_OPENGL_VERSION_4_3 = 16,
-    HC_OPENGL_VERSION_4_4 = 17,
-    HC_OPENGL_VERSION_4_5 = 18,
-    HC_OPENGL_VERSION_4_6 = 19,
+    HC_OPENGL_VERSION_1_0 = (1 << 16) | 0,
+    HC_OPENGL_VERSION_1_1 = (1 << 16) | 1,
+    HC_OPENGL_VERSION_1_2 = (1 << 16) | 2,
+    HC_OPENGL_VERSION_1_3 = (1 << 16) | 3,
+    HC_OPENGL_VERSION_1_4 = (1 << 16) | 4,
+    HC_OPENGL_VERSION_1_5 = (1 << 16) | 5,
+    HC_OPENGL_VERSION_2_0 = (2 << 16) | 0,
+    HC_OPENGL_VERSION_2_1 = (2 << 16) | 1,
+    HC_OPENGL_VERSION_3_0 = (3 << 16) | 0,
+    HC_OPENGL_VERSION_3_1 = (3 << 16) | 1,
+    HC_OPENGL_VERSION_3_2 = (3 << 16) | 2,
+    HC_OPENGL_VERSION_3_3 = (3 << 16) | 3,
+    HC_OPENGL_VERSION_4_0 = (4 << 16) | 0,
+    HC_OPENGL_VERSION_4_1 = (4 << 16) | 1,
+    HC_OPENGL_VERSION_4_2 = (4 << 16) | 2,
+    HC_OPENGL_VERSION_4_3 = (4 << 16) | 3,
+    HC_OPENGL_VERSION_4_4 = (4 << 16) | 4,
+    HC_OPENGL_VERSION_4_5 = (4 << 16) | 5,
+    HC_OPENGL_VERSION_4_6 = (4 << 16) | 6,
 } HcOpenGlVersion;
 
 typedef enum HcOpenGlEsVersion {
@@ -495,9 +495,9 @@ HYDRA_API_IMPORT HYDRA_API_ATTR HcResult HYDRA_API_CALL hcSetCallbacks(const HcC
 
 /**
     Get information about the core. Will be called one time, once the core is loaded.
-    @param info The HcCoreInfo struct to fill with information about the core.
+    @param coreInfo The HcCoreInfo struct to fill with information about the core.
 */
-HYDRA_API_EXPORT HYDRA_API_ATTR void HYDRA_API_CALL hcGetCoreInfo(HcCoreInfo* info);
+HYDRA_API_EXPORT HYDRA_API_ATTR void HYDRA_API_CALL hcGetCoreInfo(HcCoreInfo* coreInfo);
 
 /**
     Initialize the core.
