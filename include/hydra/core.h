@@ -352,8 +352,8 @@ typedef struct HcEnvironmentInfo {
     HcStructureType type;
     void* next;
     HcDriveMode driveMode;
-    HcVideoInfo* video;
-    HcAudioInfo* audio;
+    HcVideoInfo* const video;
+    HcAudioInfo* const audio;
 } HcEnvironmentInfo;
 
 typedef struct HcDestroyInfo {
