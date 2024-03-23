@@ -89,23 +89,26 @@ extern "C" {
 
 typedef enum HcResult {
     HC_SUCCESS = 0, ///< The operation was successful.
-    HC_ERROR_CORE = -1,  ///< An error occurred by the core. Core should provide hcGetError with more information.
-    HC_ERROR_NOT_ALL_CALLBACKS_SET = -2, ///< Not all callbacks were set.
-    HC_ERROR_BAD_RENDERER_VERSION = -3, ///< The renderer version is not supported.
-    HC_ERROR_BAD_CONTENT = -4, ///< The content is not valid.
-    HC_ERROR_BAD_INPUT_REQUEST = -5, ///< The input request is not valid.
-    HC_ERROR_BAD_ENVIRONMENT_INFO = -6, ///< The environment info is not valid.
-    HC_ERROR_BAD_AUDIO_DATA_WANT = -7, ///< The audio data's want field is not valid.
-    HC_ERROR_BAD_AUDIO_DATA_HAVE = -8, ///< The audio data's have field is not valid.
-    HC_ERROR_AUDIO_OVERRUN = -9, ///< The audio buffer is full and cannot accept more audio data.
-    HC_ERROR_FULLY_SELF_DRIVEN = -10, ///< The core should be fully self-driven so the frontend can't accept audio data.
-    HC_ERROR_NOT_SOFTWARE_RENDERED = -11, ///< The core is not software rendered.
-    HC_ERROR_NOT_OPENGL_RENDERED = -12, ///< The core is not OpenGL rendered.
-    HC_ERROR_NOT_VULKAN_RENDERED = -13, ///< The core is not Vulkan rendered.
-    HC_ERROR_NOT_METAL_RENDERED = -14, ///< The core is not Metal rendered.
-    HC_ERROR_NOT_DIRECT3D_RENDERED = -15, ///< The core is not Direct3D rendered.
-    HC_INTERNAL_ERROR_BAD_LOADFUNCTIONPTR, ///< The load function pointer is not valid during hcInternalLoadFunctions.
-    HC_INTERNAL_ERROR_MISSING_FUNCTION, ///< A function is missing during hcInternalLoadFunctions.
+    HC_ERROR_CORE = -1001,  ///< An error occurred by the core. Core should provide hcGetError with more information.
+    HC_ERROR_NOT_ALL_CALLBACKS_SET = -2001, ///< Not all callbacks were set.
+    HC_ERROR_WRONG_DRIVE_MODE, ///< The drive mode conflicts with what the core tries to do. Eg. setting frontend-driven callbacks in a self-driven core.
+    HC_ERROR_NULL_DATA_PASSED, ///< A null pointer was passed to a function that doesn't accept null pointers or a member pointer was null.
+    HC_ERROR_BAD_RENDERER_VERSION, ///< The renderer version is not supported.
+    HC_ERROR_BAD_CONTENT, ///< The content is not valid.
+    HC_ERROR_BAD_INPUT_REQUEST, ///< The input request is not valid.
+    HC_ERROR_BAD_ENVIRONMENT_INFO, ///< The environment info is not valid.
+    HC_ERROR_BAD_AUDIO_DATA_WANT, ///< The audio data's want field is not valid.
+    HC_ERROR_BAD_AUDIO_DATA_HAVE, ///< The audio data's have field is not valid.
+    HC_ERROR_AUDIO_OVERRUN, ///< The audio buffer is full and cannot accept more audio data.
+    HC_ERROR_AUDIO_FULLY_SELF_DRIVEN, ///< The core should be fully self-driven so the frontend can't accept audio data.
+    HC_ERROR_NOT_SOFTWARE_RENDERED, ///< The core is not software rendered.
+    HC_ERROR_NOT_OPENGL_RENDERED, ///< The core is not OpenGL rendered.
+    HC_ERROR_NOT_VULKAN_RENDERED, ///< The core is not Vulkan rendered.
+    HC_ERROR_NOT_METAL_RENDERED, ///< The core is not Metal rendered.
+    HC_ERROR_NOT_DIRECT3D_RENDERED, ///< The core is not Direct3D rendered.
+    HC_INTERNAL_ERROR_BAD_LOADFUNCTIONPTR = -5001, ///< The load function pointer is not valid during hcInternalLoadFunctions.
+    HC_INTERNAL_ERROR_MISSING_FUNCTION = -5002, ///< A function is missing during hcInternalLoadFunctions.
+    HC_INTERNAL_ERROR_WRAPPER_NOT_INITIALIZED = -5003, ///< The wrapper is not initialized for whatever reason.
 } HcResult;
 
 typedef enum HcPixelFormat {
@@ -125,26 +128,29 @@ typedef enum HcPixelFormat {
 } HcPixelFormat;
 
 typedef enum HcArchitecture {
+    HC_ARCHITECTURE_UNKNOWN,
     HC_ARCHITECTURE_X86,
     HC_ARCHITECTURE_X86_64,
     HC_ARCHITECTURE_AARCH32,
     HC_ARCHITECTURE_AARCH64,
     HC_ARCHITECTURE_WASM,
-    HC_ARCHITECTURE_OTHER = 1000,
+    HC_ARCHITECTURE_OTHER,
 } HcArchitecture;
 
 typedef enum HcOperatingSystem {
-    HC_OPERATING_SYSTEM_LINUX = 1,
-    HC_OPERATING_SYSTEM_WINDOWS = 2,
-    HC_OPERATING_SYSTEM_MACOS = 3,
-    HC_OPERATING_SYSTEM_FREEBSD = 4,
-    HC_OPERATING_SYSTEM_ANDROID = 5,
-    HC_OPERATING_SYSTEM_IOS = 6,
-    HC_OPERATING_SYSTEM_WEB = 7,
-    HC_OPERATING_SYSTEM_OTHER = 1000,
+    HC_OPERATING_SYSTEM_UNKNOWN,
+    HC_OPERATING_SYSTEM_LINUX,
+    HC_OPERATING_SYSTEM_WINDOWS,
+    HC_OPERATING_SYSTEM_MACOS,
+    HC_OPERATING_SYSTEM_FREEBSD,
+    HC_OPERATING_SYSTEM_ANDROID,
+    HC_OPERATING_SYSTEM_IOS,
+    HC_OPERATING_SYSTEM_WEB,
+    HC_OPERATING_SYSTEM_OTHER,
 } HcOperatingSystem;
 
 typedef enum HcDriveMode {
+    HC_DRIVE_MODE_NULL = 0, ///< The drive mode is not yet set.
     HC_DRIVE_MODE_SELF_DRIVEN = 1, ///< The core is responsible for doing everything itself, except for input which is provided by the frontend.
     HC_DRIVE_MODE_SELF_DRIVEN_EXCEPT_AUDIO = 2, ///< The core is responsible for doing everything itself, except for input which is provided by the frontend, and audio that is played by pushing audio frames to the frontend.
     HC_DRIVE_MODE_FRONTEND_DRIVEN = 3, ///< The frontend drives the core loop. The frontend is responsible for calling the core's runFrame function.
@@ -193,12 +199,12 @@ typedef enum HcOpenGlVersion {
 
 typedef enum HcOpenGlEsVersion {
     HC_OPENGL_ES_NOT_SUPPORTED = 0,
-    HC_OPENGL_ES_VERSION_1_0 = 1,
-    HC_OPENGL_ES_VERSION_1_1 = 2,
-    HC_OPENGL_ES_VERSION_2_0 = 3,
-    HC_OPENGL_ES_VERSION_3_0 = 4,
-    HC_OPENGL_ES_VERSION_3_1 = 5,
-    HC_OPENGL_ES_VERSION_3_2 = 6,
+    HC_OPENGL_ES_VERSION_1_0 = (1 << 16) | 0,
+    HC_OPENGL_ES_VERSION_1_1 = (1 << 16) | 1,
+    HC_OPENGL_ES_VERSION_2_0 = (2 << 16) | 0,
+    HC_OPENGL_ES_VERSION_3_0 = (3 << 16) | 0,
+    HC_OPENGL_ES_VERSION_3_1 = (3 << 16) | 1,
+    HC_OPENGL_ES_VERSION_3_2 = (3 << 16) | 2,
 } HcOpenGlEsVersion;
 
 typedef enum HcWebGlVersion {
@@ -209,17 +215,17 @@ typedef enum HcWebGlVersion {
 
 typedef enum HcVulkanVersion {
     HC_VULKAN_NOT_SUPPORTED = 0,
-    HC_VULKAN_VERSION_1_0 = 1,
-    HC_VULKAN_VERSION_1_1 = 2,
-    HC_VULKAN_VERSION_1_2 = 3,
-    HC_VULKAN_VERSION_1_3 = 4,
+    HC_VULKAN_VERSION_1_0 = (1 << 16) | 0,
+    HC_VULKAN_VERSION_1_1 = (1 << 16) | 1,
+    HC_VULKAN_VERSION_1_2 = (1 << 16) | 2,
+    HC_VULKAN_VERSION_1_3 = (1 << 16) | 3,
 } HcVulkanVersion;
 
 typedef enum HcMetalVersion {
     HC_METAL_NOT_SUPPORTED = 0,
-    HC_METAL_VERSION_1_0 = 1,
-    HC_METAL_VERSION_2_0 = 1,
-    HC_METAL_VERSION_3_0 = 1,
+    HC_METAL_VERSION_1_0 = (1 << 16) | 0,
+    HC_METAL_VERSION_2_0 = (2 << 16) | 0,
+    HC_METAL_VERSION_3_0 = (3 << 16) | 0,
 } HcMetalVersion;
 
 typedef enum HcDirect3DVersion {
@@ -396,11 +402,23 @@ typedef struct HcContentLoadInfo {
     const char* path;
 } HcContentLoadInfo;
 
+typedef struct HcFrontendDrivenCallbacks {
+    HcStructureType type;
+    void* next;
+    void (*runFrame)();
+} HcFrontendDrivenCallbacks;
+
+typedef struct HcSelfDrivenCallbacks {
+    HcStructureType type;
+    void* next;
+    void (*entryPoint)();
+} HcSelfDrivenCallbacks;
+
 typedef struct HcCallbacks {
     HcStructureType type;
     void* next;
-    void* userdata;
-    void (*runFrame)(void* userdata);
+    HcFrontendDrivenCallbacks* frontendDrivenCallbacks;
+    HcSelfDrivenCallbacks* selfDrivenCallbacks;
 } HcCallbacks;
 
 /// Imported functions, these are defined by the frontend
