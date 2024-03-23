@@ -152,8 +152,7 @@ typedef enum HcOperatingSystem {
 typedef enum HcDriveMode {
     HC_DRIVE_MODE_NULL = 0, ///< The drive mode is not yet set.
     HC_DRIVE_MODE_SELF_DRIVEN = 1, ///< The core is responsible for doing everything itself, except for input which is provided by the frontend.
-    HC_DRIVE_MODE_SELF_DRIVEN_EXCEPT_AUDIO = 2, ///< The core is responsible for doing everything itself, except for input which is provided by the frontend, and audio that is played by pushing audio frames to the frontend.
-    HC_DRIVE_MODE_FRONTEND_DRIVEN = 3, ///< The frontend drives the core loop. The frontend is responsible for calling the core's runFrame function.
+    HC_DRIVE_MODE_FRONTEND_DRIVEN = 2, ///< The frontend drives the core loop. The frontend is responsible for calling the core's runFrame function.
 } HcDriveMode;
 
 typedef enum HcStructureType {
@@ -451,7 +450,7 @@ typedef HcResult (HYDRA_API_CALL *HcReconfigureEnvironmentPtr)(const HcEnvironme
 extern HcReconfigureEnvironmentPtr hcReconfigureEnvironment;
 
 /**
-    For not fully self-driven cores (so cores that use ::HC_DRIVE_MODE_SELF_DRIVEN_EXCEPT_AUDIO or ::HC_DRIVE_MODE_FRONTEND_DRIVEN),
+    For not fully self-driven cores (so cores that use ::HC_DRIVE_MODE_FRONTEND_DRIVEN),
     this function is called by the core to push an arbitrary amount of audio samples to the frontend.
     @param audioData The audio data to push to the frontend.
     @return ::HC_SUCCESS
@@ -521,7 +520,7 @@ HYDRA_API_EXPORT HYDRA_API_ATTR void HYDRA_API_CALL hcGetCoreInfo(HcCoreInfo* co
     @return ::HC_SUCCESS
     @return ::HC_ERROR_CORE
 */
-HYDRA_API_EXPORT HYDRA_API_ATTR HcResult HYDRA_API_CALL hcCreate(HcEnvironmentInfo* environmentInfo);
+HYDRA_API_EXPORT HYDRA_API_ATTR HcResult HYDRA_API_CALL hcCreate(HcEnvironmentInfo* const environmentInfo);
 
 /**
     Destroy the core, freeing any resources it has allocated.
